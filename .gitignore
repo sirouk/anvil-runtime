@@ -1,0 +1,32 @@
+# Sensitive project files - do not upload
+KorbosBINtemplate.yaml
+*.template.yaml
+
+# Personal/sensitive data
+**/sensitive/
+**/*private*
+**/*secret*
+
+# Development environment
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/ 
