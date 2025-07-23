@@ -30,3 +30,14 @@ logs/
 *.tmp
 *.temp
 .cache/ 
+
+**/.anvil-data
+anvil-testing/
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/logs/
+**/temp/
+**/cache/
+**/test-results/

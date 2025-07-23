@@ -1,0 +1,166 @@
+components:
+- type: GridPanel
+  name: main_panel
+  properties:
+    spacing_above: small
+    spacing_below: small
+    role: elevated-card
+  layout_properties:
+    row: 0
+    col_xs: 0
+    width_xs: 12
+  components:
+    - type: Label
+      name: title_label
+      properties:
+        text: "Task Management App"
+        role: headline
+        align: center
+        font_size: 24
+      layout_properties:
+        row: 0
+        col_xs: 0
+        width_xs: 12
+    - type: TextBox
+      name: task_input
+      properties:
+        placeholder: "Enter a new task..."
+        role: input
+        border: ""
+      layout_properties:
+        row: 1
+        col_xs: 0
+        width_xs: 10
+    - type: Button
+      name: add_button
+      properties:
+        text: "Add"
+        role: primary-color
+        icon: "fa:plus"
+        spacing_above: none
+      layout_properties:
+        row: 1
+        col_xs: 10
+        width_xs: 2
+    - type: DataGrid
+      name: tasks_grid
+      properties:
+        auto_header: true
+        columns:
+          - id: "task_name"
+            title: "Task"
+            data_key: "name"
+            width: 200
+          - id: "complete_status"
+            title: "Complete"
+            data_key: "complete"
+            width: 100
+          - id: "actions"
+            title: "Actions"
+            data_key: ""
+            width: 90
+        rows_per_page: 10
+        role: data-table
+      layout_properties:
+        row: 2
+        col_xs: 0
+        width_xs: 12
+      components:
+        - type: RepeatingPanel
+          name: tasks_repeating_panel
+          properties:
+            item_template: "form:task_template:TaskRow"
+            role: repeating-container
+          components:
+            - type: DataRowPanel
+              name: task_row_template
+              properties:
+                role: table-row
+              components:
+                - type: Label
+                  name: task_name_label
+                  properties:
+                    text: ""
+                    data_binding: "item['name']"
+                  layout_properties:
+                    row: 0
+                    col_xs: 0
+                    width_xs: 6
+                - type: CheckBox
+                  name: complete_checkbox
+                  properties:
+                    checked: false
+                    data_binding: "item['complete']"
+                    align: center
+                  layout_properties:
+                    row: 0
+                    col_xs: 6
+                    width_xs: 3
+                - type: Button
+                  name: delete_button
+                  properties:
+                    icon: "fa:trash"
+                    role: secondary-color
+                    background: "#ff4444"
+                  layout_properties:
+                    row: 0
+                    col_xs: 9
+                    width_xs: 3
+- type: FlowPanel
+  name: footer_panel
+  properties:
+    align: center
+    spacing_above: medium
+    role: footer
+  layout_properties:
+    row: 1
+    col_xs: 0
+    width_xs: 12
+  components:
+    - type: Label
+      name: status_label
+      properties:
+        text: "Ready"
+        role: body
+        font_size: 14
+        foreground: "#666666"
+
+container:
+  type: ColumnPanel
+  properties:
+    spacing: medium
+    role: card
+    align: center
+
+event_bindings:
+  add_button.click: self.add_task_click
+  delete_button.click: self.delete_task_click
+  complete_checkbox.change: self.task_complete_change
+  task_input.pressed_enter: self.add_task_click
+
+data_bindings:
+  - component: tasks_repeating_panel
+    property: items
+    code: "self.task_list"
+  - component: task_name_label
+    property: text
+    code: "self.item['name']"
+  - component: complete_checkbox
+    property: checked
+    code: "self.item['complete']"
+
+is_package: false
+
+custom_component_events:
+  - name: task_updated
+    description: "Fired when a task is updated"
+    parameters:
+      - name: task_id
+        description: "ID of the updated task"
+      - name: task_data
+        description: "Updated task data"
+
+layout_metadata:
+  grid_template_columns: "repeat(12, 1fr)"
+  grid_gap: "16px"
+  max_width: "1200px" 

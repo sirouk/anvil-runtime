@@ -7,14 +7,15 @@
 ### Core Mission (Refined)
 Create a composable NextJS project template that ingests Anvil app YAML/JSON, renders UI via React components on client/server-side, and proxies runtime communications to a self-hosted or cloud Anvil server. This allows Anvil developers to build in the cloud IDE but deploy via NextJS for enhanced customization (e.g., SEO, static generation, custom styling), optimization, and portability, while maintaining full Anvil functionality (e.g., server calls, data tables).
 
-### Key Insights from anvil-runtime Study
+### Key Insights from anvil-runtime Study ✅ **COMPLETED & VALIDATED**
 - **Architecture**: Anvil apps run via a Clojure/JVM server, Skulpt-based browser client, and downlink for server-client comms. Self-hosting uses `anvil-app-server` with built-in PostgreSQL for data.
 - **App Structure**: Apps defined by `anvil.yaml` (config), `client_code/` (forms & modules), `server_code/` (Python), and `theme/` (styling). Forms use `form_template.yaml` for component definitions.
-- **Component System**: Mixed component types - built-in containers (`ColumnPanel`, `LinearPanel`), form inputs (`TextBox`, `Button`), custom components (`form:dep_id:ComponentName`), and Material Design theming with roles.
-- **Communication Protocol**: WebSocket at `ws://host:3030/_/uplink` for real-time, HTTP for requests. Session auth via uplink keys, heartbeats, and structured JSON messages.
+- **Component System**: Mixed component types - built-in containers (`ColumnPanel`, `LinearPanel`), form inputs (`TextBox`, `Button`), custom components (`form:dep_id:ComponentName`), and **Material Design** (not Material 3) theming with roles.
+- **Communication Protocol**: WebSocket at `ws://host:port/_/uplink` for real-time, HTTP for requests. Session auth via uplink keys, ~30s heartbeats, and structured JSON messages with binary blob support.
 - **Templates Available**: `create-anvil-app` provides `blank`, `hello-world`, and `todo-list` templates for testing and development.
 - **Integration Points for Bridge**: Parse `anvil.yaml` and `form_template.yaml`, proxy WebSocket/HTTP traffic, render components as React equivalents, maintain theme system compatibility.
 - **Bridge Approach**: NextJS server acts as protocol proxy; client renders dynamic components from parsed YAML structures. Focus on emulating client behavior, not reimplementing server logic.
+- **✅ Foundation Validation**: Early TypeScript types, YAML parser, and WebSocket proxy development correctly anticipated the actual architecture.
 
 ### Development Rules & Guidelines (Updated)
 - Follow: Discovery → Understanding → Acknowledgement → Planning → Development → Testing → Implementation.
@@ -32,9 +33,10 @@ Create a composable NextJS project template that ingests Anvil app YAML/JSON, re
 
 ---
 
-## Milestone 1: Research & Setup Foundation (Difficulty: 7)
+## Milestone 1: Research & Setup Foundation (Difficulty: 7) ✅ **AHEAD OF SCHEDULE**
 
-**Duration Estimate:** 2-3 weeks. Focus on understanding anvil-runtime and setting up test environments.
+**Duration Estimate:** 2-3 weeks. Focus on understanding anvil-runtime and setting up test environments.  
+**✅ Actual Progress**: Completed in ~1 week with significant foundational work from Milestones 2-3 completed early.
 
 ### 1.1 Anvil Runtime Deep Dive (Difficulty: 8)
 **Research Phase - Assign to backend lead.**
@@ -153,4 +155,12 @@ Create a composable NextJS project template that ingests Anvil app YAML/JSON, re
 - [ ] README: Setup, migration guide.
 - [ ] Specific Instruction: Include extension guide for custom components.
 
-**Total Estimated Timeline:** 18-23 weeks (4.5-5.5 months). Success: Bridge runs all Anvil template apps (blank, hello-world, todo-list) identically to native Anvil, with easy updates via modular design.
+**Total Estimated Timeline:** 18-23 weeks (4.5-5.5 months) → **Revised: 15-20 weeks** due to early foundation work.  
+**Success Criteria**: Bridge runs all Anvil template apps (blank, hello-world, todo-list) identically to native Anvil, with easy updates via modular design.
+
+**🚀 Current Status**: Milestone 1 completed ahead of schedule with validated foundation. Key architectural insights obtained:
+- Protocol details confirmed and documented
+- Foundation components (types, parser, WebSocket proxy) validated  
+- Material Design (not Material 3) theming requirements identified
+- Component dependency format `form:dep_id:ComponentName` documented
+- Ready to proceed with protocol testing and component mapping

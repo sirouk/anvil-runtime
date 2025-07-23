@@ -1,0 +1,130 @@
+roles:
+  headline:
+    font_family: "'Roboto', sans-serif"
+    font_size: "24px"
+    font_weight: "500"
+    color: "#1976d2"
+    margin_bottom: "16px"
+  
+  body:
+    font_family: "'Roboto', sans-serif"
+    font_size: "16px"
+    font_weight: "400"
+    color: "#333333"
+    line_height: "1.5"
+  
+  card:
+    background_color: "#ffffff"
+    border_radius: "8px"
+    box_shadow: "0 2px 4px rgba(0,0,0,0.1)"
+    padding: "16px"
+    margin_bottom: "16px"
+  
+  elevated-card:
+    background_color: "#ffffff"
+    border_radius: "12px"
+    box_shadow: "0 4px 12px rgba(0,0,0,0.15)"
+    padding: "24px"
+    margin_bottom: "24px"
+  
+  primary-color:
+    background_color: "#1976d2"
+    color: "#ffffff"
+    border: "none"
+    border_radius: "4px"
+    padding: "8px 16px"
+    font_weight: "500"
+    cursor: "pointer"
+  
+  secondary-color:
+    background_color: "#424242"
+    color: "#ffffff"
+    border: "none"
+    border_radius: "4px"
+    padding: "8px 16px"
+    font_weight: "500"
+    cursor: "pointer"
+  
+  input:
+    border: "1px solid #ddd"
+    border_radius: "4px"
+    padding: "8px 12px"
+    font_size: "16px"
+    font_family: "'Roboto', sans-serif"
+    background_color: "#ffffff"
+  
+  data-table:
+    border: "1px solid #e0e0e0"
+    border_radius: "4px"
+    background_color: "#ffffff"
+  
+  table-row:
+    border_bottom: "1px solid #f0f0f0"
+    padding: "8px"
+  
+  repeating-container:
+    background_color: "transparent"
+  
+  footer:
+    color: "#666666"
+    font_size: "14px"
+    text_align: "center"
+    margin_top: "32px"
+
+color_schemes:
+  primary:
+    primary: "#1976d2"
+    primary_variant: "#1565c0"
+    secondary: "#424242"
+    secondary_variant: "#303030"
+    background: "#ffffff"
+    surface: "#f5f5f5"
+    error: "#f44336"
+    on_primary: "#ffffff"
+    on_secondary: "#ffffff"
+    on_background: "#000000"
+    on_surface: "#000000"
+    on_error: "#ffffff"
+  
+  dark:
+    primary: "#90caf9"
+    primary_variant: "#64b5f6"
+    secondary: "#ce93d8"
+    secondary_variant: "#ba68c8"
+    background: "#121212"
+    surface: "#1e1e1e"
+    error: "#cf6679"
+    on_primary: "#000000"
+    on_secondary: "#000000"
+    on_background: "#ffffff"
+    on_surface: "#ffffff"
+    on_error: "#000000"
+
+spacing:
+  none: "0px"
+  small: "8px"
+  medium: "16px"
+  large: "24px"
+  extra_large: "32px"
+
+breakpoints:
+  xs: "0px"
+  sm: "600px"
+  md: "960px"
+  lg: "1280px"
+  xl: "1920px"
+
+assets:
+  css:
+    - "custom-styles.css"
+    - "material-theme.css"
+  
+  html:
+    - "standard-page.html"
+    - "popup-template.html"
+
+fonts:
+  - name: "Roboto"
+    url: "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+  - name: "Material Icons"
+    url: "https://fonts.googleapis.com/icon?family=Material+Icons" 
