@@ -71,6 +71,35 @@ export {
     type XYPosition
 } from './enhanced-layouts';
 
+// Enhanced display and media components
+export {
+    Label as EnhancedLabel,
+    AnvilImage,
+    Plot,
+    RichText,
+    FileLoader,
+    type LabelProps,
+    type ImageProps,
+    type PlotProps,
+    type RichTextProps,
+    type FileLoaderProps
+} from './enhanced-display-media';
+
+// Enhanced interactive and navigation components
+export {
+    Button as EnhancedButton,
+    Link,
+    Timer,
+    Notification,
+    DataGrid,
+    type EnhancedButtonProps,
+    type LinkProps,
+    type TimerProps,
+    type NotificationProps,
+    type DataGridProps,
+    type DataGridColumn
+} from './enhanced-interactive';
+
 // Theme context and utilities
 export {
     ThemeProvider,

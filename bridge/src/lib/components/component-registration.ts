@@ -12,16 +12,6 @@ import {
     XYPanel
 } from './enhanced-layouts';
 
-// Import form components from basic-components
-const {
-    Label,
-    TextBox: BasicTextBox,
-    Button,
-    CheckBox,
-    RepeatingPanel,
-    DataRowPanel
-} = BasicComponents;
-
 // Import enhanced form components
 import {
     TextBox,
@@ -31,6 +21,34 @@ import {
     NumberBox,
     DatePicker
 } from './enhanced-forms';
+
+// Import enhanced display and media components
+import {
+    Label as EnhancedLabel,
+    AnvilImage,
+    Plot,
+    RichText,
+    FileLoader
+} from './enhanced-display-media';
+
+// Import enhanced interactive and navigation components
+import {
+    Button as EnhancedButton,
+    Link,
+    Timer,
+    Notification,
+    DataGrid
+} from './enhanced-interactive';
+
+// Import form components from basic-components for backward compatibility
+const {
+    Label: BasicLabel,
+    TextBox: BasicTextBox,
+    Button,
+    CheckBox,
+    RepeatingPanel,
+    DataRowPanel
+} = BasicComponents;
 
 /**
  * Register all built-in Anvil components with the component registry
@@ -105,7 +123,7 @@ export function registerBasicComponents(): void {
 
     // Form Components - Using enhanced versions
     componentRegistry.register('Label', {
-        component: Label,
+        component: EnhancedLabel,
         defaultProps: {
             align: 'left'
         },
@@ -175,15 +193,24 @@ export function registerBasicComponents(): void {
     });
 
     componentRegistry.register('Button', {
-        component: Button,
+        component: EnhancedButton,
         defaultProps: {
             enabled: true,
-            role: 'primary'
+            role: 'primary-color',
+            variant: 'contained',
+            size: 'medium',
+            loading: false
         },
         propMapping: {
             'text': 'text',
             'enabled': 'enabled',
-            'role': 'role'
+            'role': 'role',
+            'icon': 'icon',
+            'icon_align': 'iconAlign',
+            'variant': 'variant',
+            'size': 'size',
+            'loading': 'loading',
+            'loading_text': 'loadingText'
         },
         layoutSupported: true,
         validation: (props) => {
@@ -194,8 +221,14 @@ export function registerBasicComponents(): void {
             if (props.enabled && typeof props.enabled !== 'boolean') {
                 errors.push('enabled property must be a boolean');
             }
-            if (props.role && !['primary', 'secondary', 'outlined', 'text'].includes(props.role)) {
-                errors.push('role must be one of: primary, secondary, outlined, text');
+            if (props.role && !['primary-color', 'secondary-color', 'raised', 'filled', 'outlined', 'filled-button', 'outlined-button'].includes(props.role)) {
+                errors.push('role must be one of: primary-color, secondary-color, raised, filled, outlined, filled-button, outlined-button');
+            }
+            if (props.variant && !['contained', 'outlined', 'text'].includes(props.variant)) {
+                errors.push('variant must be one of: contained, outlined, text');
+            }
+            if (props.size && !['small', 'medium', 'large'].includes(props.size)) {
+                errors.push('size must be one of: small, medium, large');
             }
             return errors;
         }
@@ -385,6 +418,190 @@ export function registerBasicComponents(): void {
             }
         },
         layoutSupported: true
+    });
+
+    // Display and Media Components - Enhanced versions
+    componentRegistry.register('Image', {
+        component: AnvilImage,
+        defaultProps: {
+            display_mode: 'original_size',
+            horizontal_align: 'left',
+            vertical_align: 'top'
+        },
+        propMapping: {
+            'source': 'source',
+            'height': 'height',
+            'width': 'width',
+            'display_mode': 'display_mode',
+            'horizontal_align': 'horizontal_align',
+            'vertical_align': 'vertical_align'
+        },
+        layoutSupported: true
+    });
+
+    componentRegistry.register('Plot', {
+        component: Plot,
+        defaultProps: {
+            height: 400
+        },
+        propMapping: {
+            'figure': 'figure',
+            'layout': 'layout',
+            'data': 'data',
+            'config': 'config'
+        },
+        layoutSupported: true
+    });
+
+    componentRegistry.register('RichText', {
+        component: RichText,
+        defaultProps: {
+            enabled: true,
+            format: 'html'
+        },
+        propMapping: {
+            'content': 'content',
+            'placeholder': 'placeholder',
+            'enabled': 'enabled',
+            'format': 'format'
+        },
+        layoutSupported: true
+    });
+
+    componentRegistry.register('FileLoader', {
+        component: FileLoader,
+        defaultProps: {
+            multiple: false,
+            align: 'center'
+        },
+        propMapping: {
+            'file': 'file',
+            'multiple': 'multiple',
+            'file_types': 'file_types',
+            'placeholder': 'placeholder'
+        },
+        layoutSupported: true
+    });
+
+    // Interactive and Navigation Components
+    componentRegistry.register('Link', {
+        component: Link,
+        defaultProps: {
+            target: '_self',
+            underline: 'hover',
+            navigate: false
+        },
+        propMapping: {
+            'text': 'text',
+            'url': 'url',
+            'target': 'target',
+            'form_name': 'formName',
+            'navigate': 'navigate',
+            'underline': 'underline'
+        },
+        layoutSupported: true,
+        validation: (props) => {
+            const errors: string[] = [];
+            if (props.target && !['_blank', '_self', '_parent', '_top'].includes(props.target)) {
+                errors.push('target must be one of: _blank, _self, _parent, _top');
+            }
+            if (props.underline && !['none', 'hover', 'always'].includes(props.underline)) {
+                errors.push('underline must be one of: none, hover, always');
+            }
+            return errors;
+        }
+    });
+
+    componentRegistry.register('Timer', {
+        component: Timer,
+        defaultProps: {
+            interval: 1000,
+            enabled: true,
+            autoStart: false
+        },
+        propMapping: {
+            'interval': 'interval',
+            'enabled': 'enabled',
+            'auto_start': 'autoStart'
+        },
+        layoutSupported: true,
+        validation: (props) => {
+            const errors: string[] = [];
+            if (props.interval && (typeof props.interval !== 'number' || props.interval <= 0)) {
+                errors.push('interval must be a positive number');
+            }
+            return errors;
+        }
+    });
+
+    componentRegistry.register('Notification', {
+        component: Notification,
+        defaultProps: {
+            type: 'info',
+            dismissible: true,
+            autoHide: false,
+            duration: 5000,
+            position: 'top-right'
+        },
+        propMapping: {
+            'type': 'type',
+            'title': 'title',
+            'message': 'message',
+            'dismissible': 'dismissible',
+            'auto_hide': 'autoHide',
+            'duration': 'duration',
+            'position': 'position'
+        },
+        layoutSupported: true,
+        validation: (props) => {
+            const errors: string[] = [];
+            if (props.type && !['info', 'success', 'warning', 'error'].includes(props.type)) {
+                errors.push('type must be one of: info, success, warning, error');
+            }
+            if (props.position && !['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].includes(props.position)) {
+                errors.push('position must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right');
+            }
+            return errors;
+        }
+    });
+
+    componentRegistry.register('DataGrid', {
+        component: DataGrid,
+        defaultProps: {
+            columns: [],
+            rows: [],
+            selectedRows: [],
+            sortOrder: 'asc',
+            filterable: false,
+            paginated: false,
+            pageSize: 10,
+            currentPage: 1
+        },
+        propMapping: {
+            'columns': 'columns',
+            'rows': 'rows',
+            'selected_rows': 'selectedRows',
+            'sort_by': 'sortBy',
+            'sort_order': 'sortOrder',
+            'filterable': 'filterable',
+            'paginated': 'paginated',
+            'page_size': 'pageSize',
+            'current_page': 'currentPage'
+        },
+        layoutSupported: true,
+        validation: (props) => {
+            const errors: string[] = [];
+            if (props.columns && !Array.isArray(props.columns)) {
+                errors.push('columns must be an array');
+            }
+            if (props.rows && !Array.isArray(props.rows)) {
+                errors.push('rows must be an array');
+            }
+            if (props.sortOrder && !['asc', 'desc'].includes(props.sortOrder)) {
+                errors.push('sortOrder must be one of: asc, desc');
+            }
+            return errors;
+        }
     });
 }
 

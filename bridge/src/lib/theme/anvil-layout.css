@@ -770,3 +770,123 @@
         display: none !important;
     }
 }
+
+/* Interactive Component Animations */
+@keyframes anvil-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes anvil-notification-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes anvil-notification-slide-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* Button Component Styles */
+.anvil-enhanced-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.anvil-enhanced-button:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
+    transform: translate(-50%, -50%);
+}
+
+.anvil-enhanced-button:active:before {
+    width: 300px;
+    height: 300px;
+    top: 50%;
+    left: 50%;
+}
+
+/* Link Component Styles */
+.anvil-link {
+    position: relative;
+}
+
+.anvil-link:hover {
+    text-decoration: underline;
+}
+
+/* Notification Component Styles */
+.anvil-notification {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+.anvil-notification.anvil-notification-top-left,
+.anvil-notification.anvil-notification-top-center,
+.anvil-notification.anvil-notification-top-right {
+    animation: anvil-notification-slide-in 0.3s ease-out;
+}
+
+.anvil-notification.anvil-notification-bottom-left,
+.anvil-notification.anvil-notification-bottom-center,
+.anvil-notification.anvil-notification-bottom-right {
+    animation: anvil-notification-slide-in 0.3s ease-out;
+}
+
+/* Data Grid Component Styles */
+.anvil-data-grid {
+    font-family: inherit;
+}
+
+.anvil-data-grid table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.anvil-data-grid th,
+.anvil-data-grid td {
+    text-align: left;
+    vertical-align: middle;
+}
+
+.anvil-data-grid th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.anvil-data-grid tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+.anvil-data-grid tr.selected {
+    background-color: #e3f2fd !important;
+}

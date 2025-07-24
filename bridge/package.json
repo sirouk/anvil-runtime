@@ -9,6 +9,9 @@
     "build:lib": "tsc -p tsconfig.lib.json",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -23,7 +26,18 @@
     "test:e2e:performance": "playwright test tests/e2e/04-performance-benchmarks.e2e.test.ts",
     "test:all": "npm run test && npm run test:e2e",
     "test:ci": "npm run lint && npm run type-check && npm run test:coverage && npm run test:e2e",
+    "test:auto": "node tools/automated-test-runner.js",
+    "test:with-server": "node tools/test-with-anvil-server.js",
+    "test:visual": "node tools/visual-regression-tester.js test",
+    "test:visual:baseline": "node tools/visual-regression-tester.js baseline",
+    "test:performance": "node tools/performance-benchmarker.js",
+    "pre-commit": "lint-staged",
+    "prepare": "husky",
     "type-check": "tsc --noEmit",
+    "quality-check": "npm run type-check && npm run lint && npm run format:check",
+    "quality-fix": "npm run type-check && npm run lint:fix && npm run format",
+    "security:audit": "npm audit --audit-level moderate",
+    "security:fix": "npm audit fix",
     "ws-bridge": "node server/websocket-server.js",
     "dev:full": "concurrently \"npm run ws-bridge\" \"npm run dev\"",
     "test:ws": "node -e \"const AnvilTrafficLogger = require('./tools/websocket-logger'); const logger = new AnvilTrafficLogger('ws://localhost:3001'); logger.startCapture(); setTimeout(() => logger.disconnect(), 3000);\""
@@ -56,11 +70,31 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.3",
+    "husky": "^9.1.7",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "lint-staged": "^16.1.2",
     "playwright": "^1.54.1",
+    "prettier": "^3.6.2",
     "puppeteer": "^23.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 80,
+    "tabWidth": 2,
+    "useTabs": false
   }
 }
