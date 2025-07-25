@@ -530,7 +530,7 @@ export const AnvilStateProvider: React.FC<AnvilStateProviderProps> = ({
         });
 
         // Process computed properties that depend on this property
-        processComputedProperties(componentId, property);
+        processComputedProperties(componentId, property, value);
 
         // Process data bindings
         processDataBinding(componentId, property, value);
@@ -541,7 +541,7 @@ export const AnvilStateProvider: React.FC<AnvilStateProviderProps> = ({
 
         // Process all affected computed properties and bindings
         Object.entries(properties).forEach(([property, value]) => {
-            processComputedProperties(componentId, property);
+            processComputedProperties(componentId, property, value);
             processDataBinding(componentId, property, value);
         });
     }, []);
@@ -635,7 +635,7 @@ export const AnvilStateProvider: React.FC<AnvilStateProviderProps> = ({
     }, []);
 
     // Helper functions for processing bindings and computed properties
-    const processComputedProperties = useCallback((changedComponentId: string, changedProperty: string) => {
+    const processComputedProperties = useCallback((changedComponentId: string, changedProperty: string, newValue?: AnvilStateValue) => {
         const dependencyKey = `${changedComponentId}.${changedProperty}`;
 
         computedPropertiesRef.current.forEach(computed => {
@@ -645,16 +645,22 @@ export const AnvilStateProvider: React.FC<AnvilStateProviderProps> = ({
 
                 computed.dependencies.forEach(dep => {
                     const [depComponentId, depProperty] = dep.split('.');
-                    const component = getComponentState(depComponentId);
-                    if (component) {
-                        dependencyValues[dep] = component.properties[depProperty];
+
+                    // Use the new value if this is the changed property, otherwise read from state
+                    if (dep === dependencyKey && newValue !== undefined) {
+                        dependencyValues[dep] = newValue;
+                    } else {
+                        const component = getComponentState(depComponentId);
+                        if (component) {
+                            dependencyValues[dep] = component.properties[depProperty];
+                        }
                     }
                 });
 
                 // Compute new value
                 try {
-                    const newValue = computed.compute(dependencyValues);
-                    setComponentProperty(computed.componentId, computed.property, newValue);
+                    const computedValue = computed.compute(dependencyValues);
+                    setComponentProperty(computed.componentId, computed.property, computedValue);
                 } catch (error) {
                     console.error('Error computing property:', computed, error);
                 }

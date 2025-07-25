@@ -122,8 +122,14 @@ export class URLMedia extends AnvilMedia {
         this._url = url;
 
         // Extract name from URL
-        const urlParts = url.replace(/\/+$/, '').split('/');
-        this._name = urlParts.length > 0 ? urlParts[urlParts.length - 1] : null;
+        if (url.startsWith('data:')) {
+            // For data URLs, extract the data part after base64,
+            const base64Match = url.match(/;base64,(.+)$/);
+            this._name = base64Match ? base64Match[1] : null;
+        } else {
+            const urlParts = url.replace(/\/+$/, '').split('/');
+            this._name = urlParts.length > 0 ? urlParts[urlParts.length - 1] : null;
+        }
     }
 
     private async doFetch(): Promise<{ data: ArrayBuffer; contentType: string }> {

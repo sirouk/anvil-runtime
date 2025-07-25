@@ -27,7 +27,7 @@ describe('Enhanced Display and Media Components', () => {
         });
 
         it('should apply text formatting', () => {
-            renderWithTheme(
+            const { container } = renderWithTheme(
                 <Label
                     text="Bold Italic Underlined"
                     bold={true}
@@ -35,8 +35,9 @@ describe('Enhanced Display and Media Components', () => {
                     underline={true}
                 />
             );
-            const label = screen.getByText('Bold Italic Underlined');
-            expect(label).toHaveStyle({
+            // Check the outer span which has the styling applied
+            const labelContainer = container.firstElementChild as HTMLElement;
+            expect(labelContainer).toHaveStyle({
                 fontWeight: 'bold',
                 fontStyle: 'italic',
                 textDecoration: 'underline'
@@ -56,9 +57,10 @@ describe('Enhanced Display and Media Components', () => {
         });
 
         it('should show tooltip', () => {
-            renderWithTheme(<Label text="Tooltip Test" tooltip="This is a tooltip" />);
-            const label = screen.getByText('Tooltip Test');
-            expect(label).toHaveAttribute('title', 'This is a tooltip');
+            const { container } = renderWithTheme(<Label text="Tooltip Test" tooltip="This is a tooltip" />);
+            // The tooltip is applied to the outer container element
+            const parentElement = container.firstElementChild as HTMLElement;
+            expect(parentElement).toHaveAttribute('title', 'This is a tooltip');
         });
     });
 
@@ -77,9 +79,10 @@ describe('Enhanced Display and Media Components', () => {
 
         it('should handle load event', () => {
             const handleLoad = jest.fn();
-            renderWithTheme(<AnvilImage source="test.jpg" onLoad={handleLoad} />);
-            const img = screen.getByRole('img');
-            fireEvent.load(img);
+            const { container } = renderWithTheme(<AnvilImage source="test.jpg" onLoad={handleLoad} />);
+            const img = container.querySelector('img');
+            expect(img).not.toBeNull();
+            fireEvent.load(img!);
             expect(handleLoad).toHaveBeenCalledTimes(1);
         });
 
@@ -163,7 +166,7 @@ describe('Enhanced Display and Media Components', () => {
 
     describe('Common Features', () => {
         it('should all support basic rendering', () => {
-            renderWithTheme(
+            const { container } = renderWithTheme(
                 <div>
                     <Label text="Label" />
                     <AnvilImage source="test.jpg" />
@@ -175,9 +178,9 @@ describe('Enhanced Display and Media Components', () => {
 
             // All components should be rendered (basic smoke test)
             expect(screen.getByText('Label')).toBeInTheDocument();
-            expect(screen.getByRole('img')).toBeInTheDocument();
+            expect(container.querySelector('img')).toBeInTheDocument();
             expect(screen.getByText('Loading plot...')).toBeInTheDocument();
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(container.querySelector('[contenteditable="true"]')).toBeInTheDocument();
             expect(screen.getByText('Click to choose file or drag file here')).toBeInTheDocument();
         });
     });

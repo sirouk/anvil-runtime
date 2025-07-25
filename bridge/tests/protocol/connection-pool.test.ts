@@ -223,13 +223,23 @@ describe('Connection Pool Tests', () => {
 
             // Track connectToAnvil calls
             let connectCalls = 0;
+            let healthCheckPhase = 'initial'; // Track what phase we're in
+
             MockWebSocketProxy.prototype.connectToAnvil = jest.fn()
                 .mockImplementation(() => {
                     connectCalls++;
+                    // Fail recovery attempts but allow initial connection
+                    if (connectCalls > 1) {
+                        return Promise.reject(new Error('Recovery failed'));
+                    }
                     return Promise.resolve();
                 });
 
-            MockWebSocketProxy.prototype.isConnectedToAnvil = jest.fn().mockReturnValue(true);
+            MockWebSocketProxy.prototype.isConnectedToAnvil = jest.fn()
+                .mockImplementation(() => {
+                    // Start healthy, then become unhealthy after initialization
+                    return healthCheckPhase === 'initial';
+                });
 
             await pool.initialize();
 
@@ -237,18 +247,12 @@ describe('Connection Pool Tests', () => {
             expect(connectCalls).toBe(1);
 
             // Now simulate connection becoming unhealthy
-            let healthCheckCount = 0;
-            MockWebSocketProxy.prototype.isConnectedToAnvil = jest.fn()
-                .mockImplementation(() => {
-                    healthCheckCount++;
-                    // Return false after 3 checks to trigger unhealthy state
-                    return healthCheckCount < 3;
-                });
+            healthCheckPhase = 'unhealthy';
 
-            // Wait for health checks to mark connection as unhealthy and trigger recovery
-            await new Promise(resolve => setTimeout(resolve, 200));
+            // Wait for health checks to mark connection as unhealthy and trigger multiple recovery attempts
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-            // Should have attempted to reconnect (recovery)
+            // Should have attempted to reconnect (recovery) multiple times
             expect(connectCalls).toBeGreaterThan(1);
         });
     });

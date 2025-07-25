@@ -7,7 +7,16 @@
  */
 
 import { AnvilMessage, AnvilSession } from '@/types/anvil-protocol';
-import { trafficRecorder } from './traffic-recorder';
+
+// Conditionally import traffic recorder only on server side
+let trafficRecorder: any = null;
+if (typeof window === 'undefined') {
+    try {
+        trafficRecorder = require('./traffic-recorder').trafficRecorder;
+    } catch (error) {
+        console.warn('Traffic recorder not available on server side:', error);
+    }
+}
 
 export interface AnvilClientConfig {
     websocketUrl?: string;
@@ -97,10 +106,10 @@ export class AnvilClient {
         try {
             await this.establishWebSocketConnection();
 
-            if (this.config.recordTraffic) {
+            if (this.config.recordTraffic && trafficRecorder) {
                 this.sessionId = `anvil_client_${Date.now()}`;
                 trafficRecorder.startRecording(this.sessionId, 'bridge', {
-                    userAgent: navigator.userAgent,
+                    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server-side',
                     appName: 'anvil-client',
                     version: '1.0.0'
                 });
@@ -137,7 +146,7 @@ export class AnvilClient {
             this.websocket = null;
         }
 
-        if (this.config.recordTraffic && this.sessionId) {
+        if (this.config.recordTraffic && this.sessionId && trafficRecorder) {
             trafficRecorder.stopRecording(this.sessionId);
         }
 
@@ -175,7 +184,7 @@ export class AnvilClient {
             const messageString = JSON.stringify(fullMessage);
             this.websocket.send(messageString);
 
-            if (this.config.recordTraffic && this.sessionId) {
+            if (this.config.recordTraffic && this.sessionId && trafficRecorder) {
                 trafficRecorder.recordWebSocketMessage(this.sessionId, 'client->server', fullMessage);
             }
 
@@ -318,7 +327,7 @@ export class AnvilClient {
         try {
             const message: AnvilMessage = JSON.parse(data);
 
-            if (this.config.recordTraffic && this.sessionId) {
+            if (this.config.recordTraffic && this.sessionId && trafficRecorder) {
                 trafficRecorder.recordWebSocketMessage(this.sessionId, 'server->client', message);
             }
 

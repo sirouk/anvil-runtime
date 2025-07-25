@@ -1,0 +1,184 @@
+{
+    "name": "Anvil-NextJS Universal Bridge",
+    "short_name": "Anvil Bridge",
+    "description": "Universal bridge for running Anvil applications with NextJS deployment capabilities",
+    "start_url": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#1976d2",
+    "background_color": "#ffffff",
+    "scope": "/",
+    "lang": "en",
+    "categories": [
+        "productivity",
+        "business",
+        "developer"
+    ],
+    "icons": [
+        {
+            "src": "/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshot-desktop.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "platform": "wide",
+            "label": "Anvil Bridge Desktop Application"
+        },
+        {
+            "src": "/screenshot-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "platform": "narrow",
+            "label": "Anvil Bridge Mobile Application"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Create New Form",
+            "short_name": "New Form",
+            "description": "Create a new Anvil form",
+            "url": "/form/new",
+            "icons": [
+                {
+                    "src": "/shortcut-new-form.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Component Library",
+            "short_name": "Components",
+            "description": "Browse available components",
+            "url": "/components",
+            "icons": [
+                {
+                    "src": "/shortcut-components.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Documentation",
+            "short_name": "Docs",
+            "description": "View documentation and guides",
+            "url": "/docs",
+            "icons": [
+                {
+                    "src": "/shortcut-docs.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "share_target": {
+        "action": "/share",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url",
+            "files": [
+                {
+                    "name": "file",
+                    "accept": [
+                        ".yaml",
+                        ".yml",
+                        ".py",
+                        ".js",
+                        ".ts",
+                        ".json"
+                    ]
+                }
+            ]
+        }
+    },
+    "protocol_handlers": [
+        {
+            "protocol": "anvil",
+            "url": "/open?url=%s"
+        }
+    ],
+    "file_handlers": [
+        {
+            "action": "/file-handler",
+            "accept": {
+                "application/x-anvil-app": [
+                    ".anvil"
+                ],
+                "text/yaml": [
+                    ".yaml",
+                    ".yml"
+                ],
+                "application/json": [
+                    ".json"
+                ]
+            }
+        }
+    ],
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "launch_handler": {
+        "client_mode": "focus-existing"
+    },
+    "prefer_related_applications": false,
+    "related_applications": [
+        {
+            "platform": "webapp",
+            "url": "https://anvil.works/",
+            "id": "anvil-works-web"
+        }
+    ]
+}

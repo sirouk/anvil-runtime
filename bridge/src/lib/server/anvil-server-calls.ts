@@ -492,6 +492,14 @@ export function getServerCallManager(): AnvilServerCallManager {
 }
 
 /**
+ * Set global server call manager for testing purposes
+ * @internal
+ */
+export function setServerCallManagerForTesting(manager: AnvilServerCallManager | null): void {
+    globalServerCallManager = manager;
+}
+
+/**
  * Direct anvil.server.call() equivalent function
  */
 export async function serverCall<T = any>(

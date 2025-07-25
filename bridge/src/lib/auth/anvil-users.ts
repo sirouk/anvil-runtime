@@ -18,8 +18,15 @@ export interface UserData {
     last_login?: Date;
     remembered_logins?: any[];
     mfa?: any[];
+    mfa_method?: string | null;
+    remember_me?: boolean;
     groups?: string[];
     [key: string]: any; // Allow custom user data
+}
+
+export interface LoginOptions {
+    rememberMe?: boolean;
+    mfaCode?: string;
 }
 
 export interface LoginCredentials {
@@ -39,6 +46,7 @@ export interface AuthenticationResult {
     user?: User | null;
     error?: string;
     requires_mfa?: boolean;
+    mfa_required?: boolean;
     mfa_methods?: string[];
 }
 
@@ -267,6 +275,48 @@ export class User {
     }
 
     /**
+     * Request password reset for this user
+     */
+    async requestPasswordReset(): Promise<void> {
+        try {
+            await getServerCallManager().call(
+                'anvil.users.request_password_reset',
+                [this._data.email]
+            );
+        } catch (error) {
+            throw new AnvilUsersError(`Failed to request password reset: ${(error as ServerCallError).message}`, error as ServerCallError);
+        }
+    }
+
+    /**
+     * Confirm user email with token
+     */
+    async confirmEmail(token: string): Promise<void> {
+        try {
+            await getServerCallManager().call(
+                'anvil.users.confirm_email',
+                [token]
+            );
+        } catch (error) {
+            throw new AnvilUsersError(`Failed to confirm email: ${(error as ServerCallError).message}`, error as ServerCallError);
+        }
+    }
+
+    /**
+     * Enable MFA for this user
+     */
+    async enableMFA(method: string): Promise<void> {
+        try {
+            await getServerCallManager().call(
+                'anvil.users.enable_mfa',
+                [this._data.id, method]
+            );
+        } catch (error) {
+            throw new AnvilUsersError(`Failed to enable MFA: ${(error as ServerCallError).message}`, error as ServerCallError);
+        }
+    }
+
+    /**
      * Send email confirmation
      */
     async sendEmailConfirmation(): Promise<void> {
@@ -363,10 +413,10 @@ export class AnvilUsersError extends Error {
  */
 export class AuthenticationManager {
     private static instance: AuthenticationManager | null = null;
-    private currentUser: User | null = null;
+    private _currentUser: User | null = null;
     private sessionToken: string | null = null;
     private loginCallbacks: Array<(user: User | null) => void> = [];
-    private logoutCallbacks: Array<() => void> = [];
+    private logoutCallbacks: Array<(user: User | null) => void> = [];
 
     private constructor() {
         // Private constructor for singleton
@@ -386,14 +436,14 @@ export class AuthenticationManager {
      * Get current logged-in user
      */
     getCurrentUser(): User | null {
-        return this.currentUser;
+        return this._currentUser;
     }
 
     /**
      * Check if user is logged in
      */
     isLoggedIn(): boolean {
-        return this.currentUser !== null;
+        return this._currentUser !== null;
     }
 
     /**
@@ -404,22 +454,22 @@ export class AuthenticationManager {
     }
 
     /**
-     * Login user with email and password
+     * Login user with email and password (test-compatible signature)
      */
-    async login(credentials: LoginCredentials): Promise<AuthenticationResult> {
+    async login(email: string, password: string, options?: LoginOptions): Promise<User> {
         try {
             const result = await getServerCallManager().call(
                 'anvil.users.login',
-                [credentials.email, credentials.password, credentials.remember || false, credentials.mfa_token]
+                [email, password, options || {}]
             );
 
             if (result.success) {
-                this.currentUser = new User(result.user, true);
+                this._currentUser = new User(result.user, true);
                 this.sessionToken = result.session_token;
 
                 // Store session token for future requests
                 if (typeof window !== 'undefined' && this.sessionToken) {
-                    if (credentials.remember) {
+                    if (options?.rememberMe) {
                         localStorage.setItem('anvil_session_token', this.sessionToken);
                     } else {
                         sessionStorage.setItem('anvil_session_token', this.sessionToken);
@@ -427,22 +477,15 @@ export class AuthenticationManager {
                 }
 
                 // Notify login callbacks
-                this.loginCallbacks.forEach(callback => callback(this.currentUser));
+                this.loginCallbacks.forEach(callback => callback(this._currentUser));
+
+                return this._currentUser;
+            } else {
+                throw new Error(result.error || 'Login failed');
             }
 
-            return {
-                success: result.success,
-                user: this.currentUser,
-                error: result.error,
-                requires_mfa: result.requires_mfa,
-                mfa_methods: result.mfa_methods
-            };
-
         } catch (error) {
-            return {
-                success: false,
-                error: (error as ServerCallError).message
-            };
+            throw new Error((error as Error).message);
         }
     }
 
@@ -457,16 +500,16 @@ export class AuthenticationManager {
             );
 
             if (result.success) {
-                this.currentUser = new User(result.user, true);
+                this._currentUser = new User(result.user, true);
                 this.sessionToken = token;
 
                 // Notify login callbacks
-                this.loginCallbacks.forEach(callback => callback(this.currentUser));
+                this.loginCallbacks.forEach(callback => callback(this._currentUser));
             }
 
             return {
                 success: result.success,
-                user: this.currentUser,
+                user: this._currentUser,
                 error: result.error
             };
 
@@ -484,16 +527,14 @@ export class AuthenticationManager {
     async logout(): Promise<void> {
         try {
             if (this.sessionToken) {
-                await getServerCallManager().call(
-                    'anvil.users.logout',
-                    [this.sessionToken]
-                );
+                await getServerCallManager().call('anvil.users.logout');
             }
         } catch (error) {
             // Continue with logout even if server call fails
             console.warn('Failed to logout on server:', error);
         } finally {
-            this.currentUser = null;
+            const user = this._currentUser;
+            this._currentUser = null;
             this.sessionToken = null;
 
             // Clear stored session
@@ -503,14 +544,14 @@ export class AuthenticationManager {
             }
 
             // Notify logout callbacks
-            this.logoutCallbacks.forEach(callback => callback());
+            this.logoutCallbacks.forEach(callback => callback(user));
         }
     }
 
     /**
      * Sign up new user
      */
-    async signup(signupData: SignupData): Promise<AuthenticationResult> {
+    async signup(signupData: SignupData): Promise<User> {
         try {
             const result = await getServerCallManager().call(
                 'anvil.users.signup',
@@ -518,47 +559,66 @@ export class AuthenticationManager {
             );
 
             if (result.success) {
-                const user = new User(result.user, false);
-
-                return {
-                    success: true,
-                    user: user
-                };
+                return new User(result.user, false);
+            } else {
+                throw new Error(result.error || 'Signup failed');
             }
 
-            return {
-                success: false,
-                error: result.error
-            };
-
         } catch (error) {
-            return {
-                success: false,
-                error: (error as ServerCallError).message
-            };
+            throw new Error((error as Error).message);
+        }
+    }
+
+    /**
+     * Request password reset
+     */
+    async requestPasswordReset(email: string): Promise<void> {
+        try {
+            await getServerCallManager().call(
+                'anvil.users.request_password_reset',
+                [email]
+            );
+        } catch (error) {
+            throw new AnvilUsersError(`Failed to request password reset: ${(error as ServerCallError).message}`, error as ServerCallError);
         }
     }
 
     /**
      * Reset password
      */
-    async resetPassword(email: string): Promise<PasswordResetResult> {
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+        try {
+            await getServerCallManager().call(
+                'anvil.users.reset_password',
+                [token, newPassword]
+            );
+        } catch (error) {
+            throw new AnvilUsersError(`Failed to reset password: ${(error as ServerCallError).message}`, error as ServerCallError);
+        }
+    }
+
+    /**
+     * Refresh current user session
+     */
+    async refreshCurrentUser(): Promise<User> {
         try {
             const result = await getServerCallManager().call(
-                'anvil.users.reset_password',
-                [email]
+                'anvil.users.get_current_user'
             );
 
-            return {
-                success: result.success,
-                message: result.message
-            };
+            if (result.success) {
+                this._currentUser = new User(result.user, true);
+                return this._currentUser;
+            } else {
+                // Clear current user on session expiry
+                this._currentUser = null;
+                throw new Error(result.error || 'Session expired');
+            }
 
         } catch (error) {
-            return {
-                success: false,
-                message: (error as ServerCallError).message
-            };
+            // Clear current user on error
+            this._currentUser = null;
+            throw new Error((error as Error).message);
         }
     }
 
@@ -686,7 +746,7 @@ export class AuthenticationManager {
     /**
      * Add logout callback
      */
-    onLogout(callback: () => void): void {
+    onLogout(callback: (user: User | null) => void): void {
         this.logoutCallbacks.push(callback);
     }
 
@@ -703,7 +763,7 @@ export class AuthenticationManager {
     /**
      * Remove logout callback
      */
-    removeLogoutCallback(callback: () => void): void {
+    removeLogoutCallback(callback: (user: User | null) => void): void {
         const index = this.logoutCallbacks.indexOf(callback);
         if (index > -1) {
             this.logoutCallbacks.splice(index, 1);
@@ -725,7 +785,18 @@ export function get_user(): User | null {
  * Login user (equivalent to anvil.users.login())
  */
 export async function login(email: string, password: string, remember: boolean = false): Promise<AuthenticationResult> {
-    return auth.login({ email, password, remember });
+    try {
+        const user = await auth.login(email, password, { rememberMe: remember });
+        return {
+            success: true,
+            user
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: (error as Error).message
+        };
+    }
 }
 
 /**
@@ -739,14 +810,36 @@ export async function logout(): Promise<void> {
  * Sign up new user (equivalent to anvil.users.signup())
  */
 export async function signup(signupData: SignupData): Promise<AuthenticationResult> {
-    return auth.signup(signupData);
+    try {
+        const user = await auth.signup(signupData);
+        return {
+            success: true,
+            user
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: (error as Error).message
+        };
+    }
 }
 
 /**
  * Reset password (equivalent to anvil.users.reset_password())
  */
 export async function reset_password(email: string): Promise<PasswordResetResult> {
-    return auth.resetPassword(email);
+    try {
+        await auth.requestPasswordReset(email);
+        return {
+            success: true,
+            message: 'Password reset email sent'
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: (error as Error).message
+        };
+    }
 }
 
 /**

@@ -353,6 +353,7 @@ export const Plot: React.FC<PlotProps> = ({
     useEffect(() => {
         const loadPlotly = async () => {
             try {
+                // @ts-ignore - plotly.js-dist-min has incorrect type definitions
                 const Plotly = await import('plotly.js-dist-min') as any;
                 setPlotlyLoaded(true);
 

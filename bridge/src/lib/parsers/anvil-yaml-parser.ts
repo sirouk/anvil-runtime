@@ -145,6 +145,16 @@ export class AnvilYamlParser {
         theme?: AnvilTheme;
         errors: YamlParsingError[];
     }> {
+        // Only run on server side
+        if (typeof window !== 'undefined') {
+            return {
+                config: { name: 'ClientError', package_name: '' } as AnvilAppConfig,
+                forms: new Map<string, AnvilFormTemplate>(),
+                theme: undefined,
+                errors: [{ file: 'parseAnvilApp', line: 0, column: 0, message: 'App parsing only available on server side' }]
+            };
+        }
+
         const errors: YamlParsingError[] = [];
         const forms = new Map<string, AnvilFormTemplate>();
         let config: AnvilAppConfig;

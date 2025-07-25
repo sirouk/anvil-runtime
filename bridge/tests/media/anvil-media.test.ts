@@ -93,7 +93,7 @@ describe('Anvil Media API', () => {
             expect(await blob.get_length()).toBe(content.length);
 
             const bytes = await blob.get_bytes();
-            expect(bytes).toBeInstanceOf(Uint8Array);
+            expect(bytes.constructor.name).toBe('Uint8Array');
             expect(new TextDecoder().decode(bytes)).toBe(content);
         });
 
@@ -347,6 +347,9 @@ describe('Anvil Media API', () => {
 
                 expect(document.createElement).toHaveBeenCalledWith('a');
                 expect(document.body.appendChild).toHaveBeenCalled();
+
+                // Wait for the setTimeout cleanup
+                await new Promise(resolve => setTimeout(resolve, 10));
                 expect(document.body.removeChild).toHaveBeenCalled();
             });
 

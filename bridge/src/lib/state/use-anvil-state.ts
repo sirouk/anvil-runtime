@@ -405,7 +405,8 @@ export function useAnvilProperty<T extends AnvilStateValue = AnvilStateValue>(
  */
 export function useAnvilForm(formName?: string) {
     const stateContext = useAnvilStateContext();
-    const currentFormName = formName || stateContext.getCurrentForm()?.formName || 'default';
+    // Get current form name reactively from state, use provided formName as fallback
+    const currentFormName = stateContext.state.present.currentForm || formName || 'default';
 
     const navigateToForm = useCallback((targetForm: string) => {
         stateContext.navigateToForm(targetForm);

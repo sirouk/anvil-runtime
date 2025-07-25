@@ -187,9 +187,12 @@ describe('Request Logger Tests', () => {
     });
 
     describe('Response Logging', () => {
-        test('should log response details', () => {
+        test('should log response details', async () => {
             const request = createMockRequest();
             const correlationId = logger.logRequest(request, '/api/test');
+
+            // Add a small delay to ensure duration > 0
+            await new Promise(resolve => setTimeout(resolve, 10));
 
             const responseHeaders = {
                 'content-type': 'application/json',

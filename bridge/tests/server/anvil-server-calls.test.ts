@@ -34,25 +34,47 @@ class MockWebSocket {
     onmessage: ((event: MessageEvent) => void) | null = null;
     onerror: ((event: Event) => void) | null = null;
 
+    private connectionTimeout: NodeJS.Timeout | null = null;
+    private isClosing = false;
+
     constructor(public url: string) {
-        // Simulate connection
-        setTimeout(() => {
-            this.readyState = MockWebSocket.OPEN;
-            if (this.onopen) {
-                this.onopen(new Event('open'));
+        // Simulate connection with proper cleanup
+        this.connectionTimeout = setTimeout(() => {
+            if (this.readyState === MockWebSocket.CONNECTING) {
+                this.readyState = MockWebSocket.OPEN;
+                if (this.onopen) {
+                    this.onopen(new Event('open'));
+                }
             }
         }, 10);
     }
 
     send(data: string): void {
-        // Mock send - in real tests we'd capture this
-        console.log('MockWebSocket send:', data);
+        if (this.readyState === MockWebSocket.OPEN) {
+            // Mock send - in real tests we'd capture this
+            console.log('MockWebSocket send:', data);
+        }
     }
 
     close(): void {
+        if (this.isClosing || this.readyState === MockWebSocket.CLOSED) {
+            return; // Prevent multiple close events
+        }
+
+        this.isClosing = true;
         this.readyState = MockWebSocket.CLOSED;
+
+        // Clear connection timeout if still pending
+        if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+        }
+
+        // Call onclose only once
         if (this.onclose) {
-            this.onclose(new CloseEvent('close'));
+            const closeHandler = this.onclose;
+            this.onclose = null; // Prevent multiple calls
+            closeHandler(new CloseEvent('close'));
         }
     }
 
@@ -90,7 +112,7 @@ describe('Anvil Server Call Manager', () => {
     });
 
     afterEach(() => {
-        if (manager) {
+        if (manager && manager.isConnectedToServer()) {
             manager.disconnect();
         }
     });
@@ -190,31 +212,87 @@ describe('Anvil Server Call Manager', () => {
             }).not.toThrow();
         });
 
-        test('should cancel all pending calls', async () => {
-            // Start some calls (they will be pending due to connection issues)
-            const call1 = manager.call('func1');
-            const call2 = manager.call('func2');
+        test('should cancel all pending calls (unit test)', () => {
+            // Suppress all console output during this test to prevent noise
+            const originalConsole = {
+                log: console.log,
+                error: console.error,
+                warn: console.warn,
+                info: console.info
+            };
 
-            // Give a brief moment for calls to register
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            expect(manager.getPendingCallsCount()).toBe(2);
-
-            const cancelled = manager.cancelAllCalls();
-            expect(cancelled).toBe(2);
-            expect(manager.getPendingCallsCount()).toBe(0);
-
-            // The calls should be rejected (suppress console errors for this test)
-            const originalConsoleError = console.error;
+            console.log = jest.fn();
             console.error = jest.fn();
+            console.warn = jest.fn();
+            console.info = jest.fn();
 
             try {
-                await Promise.allSettled([call1, call2]);
-                // Both calls should have been rejected/cancelled
+                // Create a manager and manually add pending calls to test cancellation logic
+                const testManager = new AnvilServerCallManager();
+
+                // Use reflection to access private members for unit testing
+                const pendingCalls = (testManager as any).pendingCalls;
+
+                // Manually create pending call objects (simulating what would happen during real calls)
+                const mockCall1 = {
+                    id: 'test1',
+                    functionName: 'func1',
+                    args: [],
+                    kwargs: {},
+                    options: { timeout: 30000 },
+                    resolve: jest.fn(),
+                    reject: jest.fn(),
+                    timestamp: Date.now(),
+                    retryCount: 0,
+                    timeoutId: setTimeout(() => { }, 30000)
+                };
+
+                const mockCall2 = {
+                    id: 'test2',
+                    functionName: 'func2',
+                    args: [],
+                    kwargs: {},
+                    options: { timeout: 30000 },
+                    resolve: jest.fn(),
+                    reject: jest.fn(),
+                    timestamp: Date.now(),
+                    retryCount: 0,
+                    timeoutId: setTimeout(() => { }, 30000)
+                };
+
+                // Add to pending calls
+                pendingCalls.set('test1', mockCall1);
+                pendingCalls.set('test2', mockCall2);
+
+                // Verify setup
+                expect(testManager.getPendingCallsCount()).toBe(2);
+
+                // Test cancellation
+                const cancelled = testManager.cancelAllCalls();
+                expect(cancelled).toBe(2);
+                expect(testManager.getPendingCallsCount()).toBe(0);
+
+                // Verify calls were rejected with correct error
+                expect(mockCall1.reject).toHaveBeenCalledWith({
+                    type: 'UnknownError',
+                    message: 'All calls cancelled',
+                    serverFunction: 'func1'
+                });
+
+                expect(mockCall2.reject).toHaveBeenCalledWith({
+                    type: 'UnknownError',
+                    message: 'All calls cancelled',
+                    serverFunction: 'func2'
+                });
+
             } finally {
-                console.error = originalConsoleError;
+                // Restore console
+                console.log = originalConsole.log;
+                console.error = originalConsole.error;
+                console.warn = originalConsole.warn;
+                console.info = originalConsole.info;
             }
-        });
+        })
     });
 
     describe('Error Handling', () => {

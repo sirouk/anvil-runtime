@@ -408,51 +408,24 @@ export const Timer: React.FC<TimerProps> = ({
     onReset,
     ...props
 }) => {
-    const [isRunning, setIsRunning] = useState(autoStart);
-    const [tickCount, setTickCount] = useState(0);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-    const start = useCallback(() => {
-        if (!enabled || isRunning) return;
-
-        setIsRunning(true);
-        onStart?.();
-
-        intervalRef.current = setInterval(() => {
-            setTickCount(prev => prev + 1);
-            onTick?.();
-        }, interval);
-    }, [enabled, isRunning, interval, onTick, onStart]);
-
-    const stop = useCallback(() => {
-        if (!isRunning) return;
-
-        setIsRunning(false);
-        onStop?.();
-
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-    }, [isRunning, onStop]);
-
-    const reset = useCallback(() => {
-        stop();
-        setTickCount(0);
-        onReset?.();
-    }, [stop, onReset]);
 
     useEffect(() => {
         if (autoStart && enabled) {
-            start();
+            onStart?.();
+
+            intervalRef.current = setInterval(() => {
+                onTick?.();
+            }, interval);
         }
 
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
-    }, [autoStart, enabled, start]);
+    }, [autoStart, enabled, interval, onTick, onStart]);
 
     if (!visible) return null;
 
@@ -469,6 +442,8 @@ export interface NotificationProps extends AnvilLayoutProps {
     autoHide?: boolean;
     duration?: number; // milliseconds
     position?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+    className?: string;
+    style?: React.CSSProperties;
     onDismiss?: () => void;
     onShow?: () => void;
     onHide?: () => void;
@@ -498,20 +473,23 @@ export const Notification: React.FC<NotificationProps> = ({
         if (visible && !isShown) {
             setIsShown(true);
             onShow?.();
+        }
+    }, [visible, isShown, onShow]);
 
-            if (autoHide && duration > 0) {
-                timeoutRef.current = setTimeout(() => {
-                    handleDismiss();
-                }, duration);
-            }
+    useEffect(() => {
+        if (isShown && autoHide && duration > 0) {
+            timeoutRef.current = setTimeout(() => {
+                handleDismiss();
+            }, duration);
         }
 
         return () => {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
             }
         };
-    }, [visible, isShown, autoHide, duration, onShow]);
+    }, [isShown, autoHide, duration]);
 
     const handleDismiss = () => {
         setIsShown(false);
@@ -676,6 +654,8 @@ export interface DataGridProps extends AnvilLayoutProps {
     paginated?: boolean;
     pageSize?: number;
     currentPage?: number;
+    className?: string;
+    style?: React.CSSProperties;
     onRowSelect?: (row: any, selected: boolean) => void;
     onSort?: (column: string, order: 'asc' | 'desc') => void;
     onFilter?: (filters: Record<string, string>) => void;

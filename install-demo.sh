@@ -2,6 +2,13 @@
 
 # Anvil-NextJS Universal Bridge Demo Installer
 # This script sets up the complete development environment for the Anvil-NextJS Bridge
+# 
+# Options:
+# 1. Deploy demo Todo List app (no additional setup required)
+# 2. Deploy your own Anvil app (requires SSH access to Anvil git repository)
+#
+# For custom apps, ensure you have SSH keys configured for Anvil:
+# https://anvil.works/docs/version-control/git
 
 set -e  # Exit on any error
 
@@ -49,7 +56,7 @@ install_system_deps() {
     if [[ "$OS" == "linux" ]]; then
         log_info "Installing Linux dependencies..."
         sudo apt-get update
-        sudo apt-get install -y openjdk-11-jdk libpq-dev python3 python3-pip python3-venv nodejs npm postgresql postgresql-contrib curl wget
+        sudo apt-get install -y openjdk-11-jdk libpq-dev python3 python3-pip python3-venv nodejs npm postgresql postgresql-contrib curl wget git
         
         # Install Google Chrome for testing
         if ! command -v google-chrome &> /dev/null; then
@@ -76,7 +83,7 @@ install_system_deps() {
         fi
         
         # Install dependencies
-        brew install openjdk@11 postgresql pgcli node npm
+        brew install openjdk@11 postgresql pgcli node npm git
         
         # Set JAVA_HOME for macOS
         export JAVA_HOME="/opt/homebrew/opt/openjdk@11"
@@ -136,6 +143,115 @@ setup_python_env() {
     log_success "Python environment setup complete"
 }
 
+# Ask user for app choice
+choose_app_type() {
+    echo
+    log_info "🚀 Choose your deployment option:"
+    echo "  1) Deploy the demo Todo List app (recommended for first-time users)"
+    echo "  2) Deploy your own Anvil app from git"
+    echo
+    
+    while true; do
+        read -p "Enter your choice (1 or 2): " choice
+        case $choice in
+            1)
+                APP_TYPE="demo"
+                APP_NAME="MyTodoList"
+                log_info "Selected: Demo Todo List application"
+                break
+                ;;
+            2)
+                APP_TYPE="custom"
+                get_custom_app_details
+                break
+                ;;
+            *)
+                echo "Please enter 1 or 2"
+                ;;
+        esac
+    done
+}
+
+# Get custom app details from user
+get_custom_app_details() {
+    echo
+    log_info "📋 To clone your Anvil app, you'll need the SSH clone URL from your Anvil Editor."
+    echo
+    echo "🔍 How to find your SSH clone URL:"
+    echo "  1. Open your app in the Anvil Editor (https://anvil.works)"
+    echo "  2. Click the 'Version History' tab (⏱️) in the left sidebar"
+    echo "  3. Click 'Clone with Git' button"
+    echo "  4. Copy the complete SSH URL from the dialog"
+    echo "     (Format: ssh://user@anvil.works:2222/ABC123.git)"
+    echo
+    
+    while true; do
+        echo "📝 Paste your complete SSH clone URL:"
+        read -p "> " FULL_SSH_URL
+        
+        # Trim whitespace
+        FULL_SSH_URL=$(echo "$FULL_SSH_URL" | xargs)
+        
+        # Validate the URL format
+        if [[ $FULL_SSH_URL =~ ssh://.*@anvil\.works:2222/.*\.git ]]; then
+            # Extract app name from URL (everything after last slash, remove .git)
+            APP_NAME=$(basename "$FULL_SSH_URL" .git)
+            log_info "Selected: Custom app '$APP_NAME'"
+            
+            # Ask for confirmation
+            read -p "Deploy app '$APP_NAME'? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                break
+            else
+                echo "Let's try again..."
+                continue
+            fi
+        else
+            log_error "Invalid SSH URL format. Expected: ssh://user@anvil.works:2222/APPID.git"
+            echo "Example: ssh://bridget%40anvil.works@anvil.works:2222/RJYQKQBMRN2JJF6U.git"
+            echo
+        fi
+    done
+}
+
+# Clone custom Anvil app
+clone_custom_app() {
+    log_info "Cloning your Anvil application..."
+    
+    # Ensure we're in the project root
+    cd "$(dirname "$0")"
+    
+    # Create anvil-testing directory
+    mkdir -p anvil-testing
+    cd anvil-testing
+    
+    # Clone the custom app
+    if [[ ! -d "$APP_NAME" ]]; then
+        log_info "Cloning app from: $FULL_SSH_URL"
+        
+        # Clone the app
+        if git clone "$FULL_SSH_URL" "$APP_NAME"; then
+            log_success "Custom Anvil app '$APP_NAME' cloned successfully"
+        else
+            log_error "Failed to clone app. Common issues:"
+            log_error "• Check your SSH URL is correct"
+            log_error "• Ensure SSH keys are configured for Anvil (https://anvil.works/docs/version-control/git)"
+            log_error "• Verify you have access to this app in your Anvil account"
+            log_error "• Make sure git is installed and SSH is working"
+            echo
+            log_info "To test SSH access manually, try:"
+            echo "  ssh -T git@anvil.works"
+            echo
+            exit 1
+        fi
+    else
+        log_info "App '$APP_NAME' already exists"
+    fi
+    
+    cd ..
+}
+
 # Create demo Anvil app
 create_demo_app() {
     log_info "Creating demo Anvil application..."
@@ -148,15 +264,26 @@ create_demo_app() {
     cd anvil-testing
     
     # Create demo app if it doesn't exist
-    if [[ ! -d "MyTodoList" ]]; then
+    if [[ ! -d "$APP_NAME" ]]; then
         source ../.venv/bin/activate
-        create-anvil-app todo-list MyTodoList
-        log_success "Demo Anvil app 'MyTodoList' created"
+        create-anvil-app todo-list "$APP_NAME"
+        log_success "Demo Anvil app '$APP_NAME' created"
     else
-        log_info "Demo app 'MyTodoList' already exists"
+        log_info "Demo app '$APP_NAME' already exists"
     fi
     
     cd ..
+}
+
+# Setup Anvil application (demo or custom)
+setup_anvil_app() {
+    choose_app_type
+    
+    if [[ "$APP_TYPE" == "demo" ]]; then
+        create_demo_app
+    else
+        clone_custom_app
+    fi
 }
 
 # Start Anvil server
@@ -182,10 +309,12 @@ start_anvil_server() {
     
     # Start the server using the official anvil-app-server command
     # PostgreSQL JDBC driver is bundled - no external driver needed
+    # --auto-migrate ensures database schema changes are applied automatically
     nohup anvil-app-server \
-        --app anvil-testing/MyTodoList \
+        --app "anvil-testing/$APP_NAME" \
         --port 3030 \
         --database "$DB_URL" \
+        --auto-migrate \
         > anvil-server.log 2>&1 &
     
     # Wait for server to start
@@ -304,7 +433,7 @@ main() {
     install_system_deps
     setup_database
     setup_python_env
-    create_demo_app
+    setup_anvil_app
     setup_nextjs
     start_anvil_server
     start_nextjs_server
@@ -334,7 +463,11 @@ main() {
     echo "  └─────────────────────────────────────────────────────┘"
     echo
     echo "🎯 What you'll see:"
-    echo "  • Todo List application built with Anvil"
+    if [[ "$APP_TYPE" == "demo" ]]; then
+        echo "  • Todo List demo application built with Anvil"
+    else
+        echo "  • Your custom Anvil application: $APP_NAME"
+    fi
     echo "  • Running on NextJS with modern web features"
     echo "  • Identical functionality to native Anvil"
     echo "  • Real-time data persistence with PostgreSQL"

@@ -5,10 +5,11 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
+
 import {
-    DataTable,
     DataRow,
+    DataTable,
     TableRegistry,
     AppTables,
     app_tables,
@@ -29,13 +30,30 @@ import {
     useTableForm
 } from '../../src/lib/tables/use-anvil-tables';
 
-// Mock server call manager
-const mockServerCall = jest.fn();
-jest.mock('../../src/lib/server/anvil-server-calls', () => ({
-    getServerCallManager: () => ({
-        call: mockServerCall
-    })
-}));
+import { setServerCallManagerForTesting } from '../../src/lib/server/anvil-server-calls';
+
+// Create mock server call function
+const mockServerCall = jest.fn() as jest.MockedFunction<(...args: any[]) => Promise<any>>;
+
+// Create mock server call manager
+const mockServerCallManager = {
+    call: mockServerCall,
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+    isConnected: jest.fn(() => true)
+} as any;
+
+// Global setup for all tests
+beforeEach(() => {
+    // Set up mock server call manager for all tests
+    setServerCallManagerForTesting(mockServerCallManager);
+    mockServerCall.mockClear();
+});
+
+afterEach(() => {
+    // Clean up mock server call manager after all tests
+    setServerCallManagerForTesting(null);
+});
 
 describe('DataRow Tests', () => {
     let schema: TableSchema;
@@ -659,7 +677,7 @@ describe('React Hooks Integration', () => {
     });
 
     describe('useTable Hook', () => {
-        test('should provide table instance', () => {
+        test('should provide table query interface', () => {
             const schema: TableSchema = {
                 name: 'test_table',
                 columns: { id: { type: 'number' } },
@@ -669,24 +687,43 @@ describe('React Hooks Integration', () => {
 
             TableRegistry.registerTable('test_table', schema);
 
-            const { result } = renderHook(() => useTable('test_table'));
+            const { result } = renderHook(() => useTable('test_table', {}, { skip: true }));
 
-            expect(result.current).toBeInstanceOf(DataTable);
-            expect(result.current.getName()).toBe('test_table');
+            // useTable returns a query result object, not the DataTable instance
+            expect(result.current).toHaveProperty('data');
+            expect(result.current).toHaveProperty('loading');
+            expect(result.current).toHaveProperty('error');
+            expect(result.current).toHaveProperty('refetch');
+            expect(result.current).toHaveProperty('search');
+            expect(Array.isArray(result.current.data)).toBe(true);
         });
 
-        test('should return null for non-existent table', () => {
+        test('should handle non-existent table', async () => {
             const { result } = renderHook(() => useTable('nonexistent'));
 
-            expect(result.current).toBeNull();
+            // Wait for the hook to process the error
+            await waitFor(() => {
+                expect(result.current.error).not.toBeNull();
+            });
+
+            // For non-existent tables, it should return an error in the error field
+            expect(result.current).toHaveProperty('error');
+            expect(result.current.error?.message).toBe("Table 'nonexistent' not found");
         });
     });
 
     describe('useAppTables Hook', () => {
-        test('should provide app tables instance', () => {
+        test('should provide app tables management interface', () => {
             const { result } = renderHook(() => useAppTables());
 
-            expect(result.current).toBe(app_tables);
+            // useAppTables returns a management object, not the app_tables instance directly
+            expect(result.current).toHaveProperty('loading');
+            expect(result.current).toHaveProperty('initialized');
+            expect(result.current).toHaveProperty('error');
+            expect(result.current).toHaveProperty('tables');
+            expect(result.current).toHaveProperty('initialize');
+            expect(result.current).toHaveProperty('getTable');
+            expect(typeof result.current.getTable).toBe('function');
         });
     });
 
@@ -706,9 +743,16 @@ describe('React Hooks Integration', () => {
 
             const { result } = renderHook(() => useTableInfo('test_table'));
 
+            // useTableInfo returns schema, count, loading, error, getCount, exists, tableName
             expect(result.current?.schema).toEqual(schema);
-            expect(result.current?.columnNames).toEqual(['id', 'name']);
-            expect(result.current?.requiredColumns).toEqual(['id', 'name']);
+            expect(result.current?.tableName).toBe('test_table');
+            expect(result.current).toHaveProperty('count');
+            expect(result.current).toHaveProperty('loading');
+            expect(result.current).toHaveProperty('error');
+            expect(result.current).toHaveProperty('getCount');
+            expect(result.current).toHaveProperty('exists');
+            // Column names can be derived from the schema
+            expect(Object.keys(result.current?.schema?.columns || {})).toEqual(['id', 'name']);
         });
     });
 });

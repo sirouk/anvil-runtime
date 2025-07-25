@@ -149,10 +149,21 @@ export class StatePersistenceManager {
      */
     async loadState(): Promise<{ state: AnvilAppState | null; metadata?: PersistedStateMetadata }> {
         try {
-            // Check cache first
+            // Check cache first, but respect expiration
             const cached = this.cache.get(this.config.key);
             if (cached && Date.now() - cached.timestamp < 60000) { // 1 minute cache
-                return { state: cached.state };
+                // Still need to check if cached data is expired
+                if (this.config.expirationMs) {
+                    const cacheAge = Date.now() - cached.timestamp;
+                    if (cacheAge > this.config.expirationMs) {
+                        // Cached data is expired, remove it and continue to storage check
+                        this.cache.delete(this.config.key);
+                    } else {
+                        return { state: cached.state };
+                    }
+                } else {
+                    return { state: cached.state };
+                }
             }
 
             const stored = await this.storageAdapter.load(this.config.key);
@@ -255,63 +266,72 @@ export class StatePersistenceManager {
     // Private methods
 
     private async performSave(state: AnvilAppState): Promise<PersistenceResult> {
-        // Filter state based on include/exclude configuration
-        const filteredState = this.filterState(state);
+        try {
+            // Filter state based on include/exclude configuration
+            const filteredState = this.filterState(state);
 
-        // Apply transformation hook
-        const transformedState = this.config.beforeSave ? this.config.beforeSave(filteredState) : filteredState;
+            // Apply transformation hook
+            const transformedState = this.config.beforeSave ? this.config.beforeSave(filteredState) : filteredState;
 
-        // Serialize state
-        let stateData = JSON.stringify(transformedState);
-        let compressed = false;
-        let encrypted = false;
+            // Serialize state
+            let stateData = JSON.stringify(transformedState);
+            let compressed = false;
+            let encrypted = false;
 
-        // Compress if enabled
-        if (this.config.compress) {
-            stateData = await this.compress(stateData);
-            compressed = true;
-        }
+            // Compress if enabled
+            if (this.config.compress) {
+                stateData = await this.compress(stateData);
+                compressed = true;
+            }
 
-        // Encrypt if enabled
-        if (this.config.encrypt && this.config.encryptionKey) {
-            stateData = await this.encrypt(stateData);
-            encrypted = true;
-        }
+            // Encrypt if enabled
+            if (this.config.encrypt && this.config.encryptionKey) {
+                stateData = await this.encrypt(stateData);
+                encrypted = true;
+            }
 
-        // Check size limits
-        const size = new Blob([stateData]).size;
-        if (this.config.maxSize && size > this.config.maxSize) {
+            // Check size limits
+            const size = new Blob([stateData]).size;
+            if (this.config.maxSize && size > this.config.maxSize) {
+                return {
+                    success: false,
+                    error: `State size (${size} bytes) exceeds maximum (${this.config.maxSize} bytes)`,
+                    strategy: this.config.strategy
+                };
+            }
+
+            // Create metadata
+            const metadata: PersistedStateMetadata = {
+                timestamp: Date.now(),
+                version: this.config.version!,
+                compressed,
+                encrypted,
+                size,
+                expiresAt: this.config.expirationMs ? Date.now() + this.config.expirationMs : undefined,
+                checksum: await this.calculateChecksum(stateData)
+            };
+
+            // Save to storage
+            await this.storageAdapter.save(this.config.key, stateData, metadata);
+
+            // Update cache
+            this.cache.set(this.config.key, { state: transformedState, timestamp: Date.now() });
+
+            return {
+                success: true,
+                size,
+                compressed,
+                encrypted,
+                strategy: this.config.strategy
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown save error';
             return {
                 success: false,
-                error: `State size (${size} bytes) exceeds maximum (${this.config.maxSize} bytes)`,
+                error: errorMessage,
                 strategy: this.config.strategy
             };
         }
-
-        // Create metadata
-        const metadata: PersistedStateMetadata = {
-            timestamp: Date.now(),
-            version: this.config.version!,
-            compressed,
-            encrypted,
-            size,
-            expiresAt: this.config.expirationMs ? Date.now() + this.config.expirationMs : undefined,
-            checksum: await this.calculateChecksum(stateData)
-        };
-
-        // Save to storage
-        await this.storageAdapter.save(this.config.key, stateData, metadata);
-
-        // Update cache
-        this.cache.set(this.config.key, { state: transformedState, timestamp: Date.now() });
-
-        return {
-            success: true,
-            size,
-            compressed,
-            encrypted,
-            strategy: this.config.strategy
-        };
     }
 
     private filterState(state: AnvilAppState): AnvilAppState {
