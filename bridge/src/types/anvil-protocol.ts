@@ -51,7 +51,7 @@ export interface AnvilAppConfig {
         logo?: string;
     };
     startup_form?: string;
-    startup?: string;
+    startup?: string | { module: string; type: string };
     native_deps?: AnvilNativeDep[];
     db_schema?: any;
 }

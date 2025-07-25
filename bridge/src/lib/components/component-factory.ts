@@ -6,6 +6,8 @@ import {
     ComponentValidator,
     PropertyMapper
 } from './component-registry';
+// Import to ensure components are registered
+import './component-registration';
 
 /**
  * Options for component factory creation

@@ -48,7 +48,16 @@ class ComponentRegistry {
             const parts = type.split(':');
             if (parts.length === 3) {
                 const [, depId, componentName] = parts;
-                // For now, treat as custom component - would need dependency resolution
+
+                // Handle Material 3 Theme components (dep_lin1x4oec0ytd)
+                if (depId === 'dep_lin1x4oec0ytd') {
+                    const standardType = this.mapMaterial3Component(componentName);
+                    if (standardType && this.registry.has(standardType)) {
+                        return this.registry.get(standardType)!;
+                    }
+                }
+
+                // For other dependency components, create custom placeholder
                 return this.createCustomComponentDefinition(componentName, depId);
             }
         }
@@ -65,6 +74,27 @@ class ComponentRegistry {
         }
 
         return null;
+    }
+
+    /**
+     * Map Material 3 Theme components to standard Anvil components
+     */
+    private mapMaterial3Component(componentName: string): string | null {
+        const material3Mappings: Record<string, string> = {
+            '_Components.Button': 'Button',
+            '_Components.TextInput.TextArea': 'TextArea',
+            '_Components.TextField': 'TextBox',
+            '_Components.RadioButton': 'RadioButton',
+            '_Components.RadioGroupPanel': 'ColumnPanel',
+            '_Components.Checkbox': 'CheckBox',
+            '_Components.Switch': 'CheckBox',
+            '_Components.Slider': 'Slider',
+            '_Components.Dropdown': 'DropDown',
+            '_Components.Card': 'ColumnPanel',
+            '_Components.Navigation': 'ColumnPanel'
+        };
+
+        return material3Mappings[componentName] || null;
     }
 
     /**

@@ -1,3 +1,4 @@
+import React from 'react';
 import { componentRegistry } from './component-registry';
 // Import basic components for backward compatibility
 import * as BasicComponents from './basic-components';
@@ -142,6 +143,34 @@ export function registerBasicComponents(): void {
             }
             return errors;
         }
+    });
+
+    // Handle form references (form:component_name pattern)
+    // These are references to other forms in the Anvil app
+    // Create a form reference component
+    const FormReference = ({ type, children, ...props }: any) => {
+        const formName = type && typeof type === 'string' ? type.replace('form:', '') : 'unknown';
+        return React.createElement('div', {
+            className: `anvil-form-reference anvil-form-${formName}`,
+            'data-form-reference': formName,
+            style: {
+                padding: '16px',
+                border: '2px dashed #ccc',
+                borderRadius: '4px',
+                color: '#666',
+                textAlign: 'center',
+                ...props.style
+            }
+        }, children && children.length > 0 ? children : `Form Reference: ${formName}`);
+    };
+
+    // Register specific form references that appear in the app
+    componentRegistry.register('form:left_side_panel', {
+        component: FormReference,
+        defaultProps: {
+            className: 'anvil-form-reference'
+        },
+        layoutSupported: true
     });
 
     // Enhanced TextBox registration
@@ -416,6 +445,20 @@ export function registerBasicComponents(): void {
                 minHeight: '100vh',
                 padding: '16px'
             }
+        },
+        layoutSupported: true
+    });
+
+    // HtmlTemplate - maps to HtmlPanel for HTML content containers
+    componentRegistry.register('HtmlTemplate', {
+        component: HtmlPanel,
+        defaultProps: {
+            className: 'anvil-html-template',
+            style: {}
+        },
+        propMapping: {
+            'html': 'html',
+            'properties': 'properties'
         },
         layoutSupported: true
     });

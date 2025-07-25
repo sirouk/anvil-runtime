@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
-import { AppDiscoveryService, type DiscoveredApp } from './app-discovery';
+import { type DiscoveredApp } from './app-discovery';
 import { AppNavigationBridge, setGlobalNavigationBridge, useAppNavigation } from './app-navigation-bridge';
 import type { AnvilFormTemplate } from '../../types/anvil-protocol';
 import { useRouter } from 'next/navigation';
@@ -206,26 +206,57 @@ export function AppContextProvider({
         }
     }, [state.app, router]);
 
-    // Discover apps
+    // Discover apps via API endpoint
     const discoverApps = useCallback(async () => {
+        console.log('🔧 DEBUG: Starting app discovery via API...');
         dispatch({ type: 'START_DISCOVERY' });
 
         try {
-            const result = await AppDiscoveryService.discoverApps();
+            console.log('🔧 DEBUG: Calling /api/discover-apps endpoint...');
+            const response = await fetch('/api/discover-apps');
+            const data = await response.json();
+
+            console.log('🔧 DEBUG: API response:', data);
+
+            if (!data.success) {
+                throw new Error(data.error || 'API discovery failed');
+            }
+
+            const { result } = data;
 
             if (result.errors.length > 0) {
                 console.warn('App discovery warnings:', result.errors);
             }
 
+            // Convert the simplified app data back to the expected format
+            const apps = result.apps.map((appData: any) => ({
+                name: appData.name,
+                path: appData.path,
+                config: appData.config,
+                forms: new Map(Object.entries(appData.forms || {}) as [string, AnvilFormTemplate][]), // Convert forms object to Map
+                startupForm: appData.startupForm,
+                errors: appData.errors || []
+            }));
+
+            const primaryApp = result.primaryApp ? {
+                name: result.primaryApp.name,
+                path: result.primaryApp.path,
+                config: result.primaryApp.config,
+                forms: new Map(Object.entries(result.primaryApp.forms || {}) as [string, AnvilFormTemplate][]), // Convert forms object to Map
+                startupForm: result.primaryApp.startupForm,
+                errors: result.primaryApp.errors || []
+            } : undefined;
+
             dispatch({
                 type: 'DISCOVERY_SUCCESS',
                 payload: {
-                    apps: result.apps,
-                    primaryApp: result.primaryApp
+                    apps,
+                    primaryApp
                 }
             });
 
         } catch (error) {
+            console.log('🔧 DEBUG: Discovery error:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to discover apps';
             dispatch({ type: 'DISCOVERY_ERROR', payload: errorMessage });
         }

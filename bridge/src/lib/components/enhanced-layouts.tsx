@@ -138,12 +138,29 @@ export const HtmlPanel: React.FC<HtmlPanelProps> = ({
         className
     ].filter(Boolean).join(' ');
 
-    if (html) {
+    // Handle @theme: references
+    let resolvedHtml = html;
+    if (html && html.startsWith('@theme:')) {
+        // For now, render children with a basic layout
+        // TODO: Load actual theme HTML from assets
+        return (
+            <div className={classes} style={containerStyle} {...props}>
+                <div className="anvil-theme-container" style={{ padding: '20px' }}>
+                    {/* Basic layout for theme template */}
+                    <div className="anvil-theme-content">
+                        {children}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (resolvedHtml) {
         return (
             <div
                 className={classes}
                 style={containerStyle}
-                dangerouslySetInnerHTML={{ __html: html }}
+                dangerouslySetInnerHTML={{ __html: resolvedHtml }}
                 {...props}
             />
         );

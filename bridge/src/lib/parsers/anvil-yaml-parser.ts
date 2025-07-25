@@ -32,6 +32,50 @@ interface ComponentValidationOptions {
     validateEventBindings?: boolean;
 }
 
+/**
+ * Map Material 3 Theme components to standard Anvil components
+ */
+function mapMaterial3ComponentType(componentType: string): string {
+    const material3Mappings: Record<string, string> = {
+        'form:dep_lin1x4oec0ytd:_Components.Button': 'Button',
+        'form:dep_lin1x4oec0ytd:_Components.TextInput.TextArea': 'TextArea',
+        'form:dep_lin1x4oec0ytd:_Components.TextField': 'TextBox',
+        'form:dep_lin1x4oec0ytd:_Components.RadioButton': 'RadioButton',
+        'form:dep_lin1x4oec0ytd:_Components.RadioGroupPanel': 'ColumnPanel',
+        'form:dep_lin1x4oec0ytd:_Components.Checkbox': 'CheckBox',
+        'form:dep_lin1x4oec0ytd:_Components.Switch': 'CheckBox',
+        'form:dep_lin1x4oec0ytd:_Components.Slider': 'Slider',
+        'form:dep_lin1x4oec0ytd:_Components.Dropdown': 'DropDown',
+        'form:dep_lin1x4oec0ytd:_Components.Card': 'ColumnPanel',
+        'form:dep_lin1x4oec0ytd:_Components.Navigation': 'ColumnPanel'
+    };
+
+    return material3Mappings[componentType] || componentType;
+}
+
+/**
+ * Recursively replace Material 3 Theme component types in component data
+ */
+function replaceMaterial3Components(obj: any): any {
+    if (Array.isArray(obj)) {
+        return obj.map(item => replaceMaterial3Components(item));
+    }
+
+    if (obj && typeof obj === 'object') {
+        const result: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+            if (key === 'type' && typeof value === 'string' && value.startsWith('form:dep_lin1x4oec0ytd:')) {
+                result[key] = mapMaterial3ComponentType(value);
+            } else {
+                result[key] = replaceMaterial3Components(value);
+            }
+        }
+        return result;
+    }
+
+    return obj;
+}
+
 export class AnvilYamlParser {
     /**
      * Parse anvil.yaml app configuration
@@ -40,7 +84,9 @@ export class AnvilYamlParser {
         try {
             const parsed = yaml.load(yamlContent) as any;
             return {
-                dependencies: parsed.dependencies || [],
+                dependencies: (parsed.dependencies || []).filter((dep: any) =>
+                    !(dep && typeof dep === 'object' && dep.dep_id === 'dep_lin1x4oec0ytd')
+                ),
                 services: parsed.services || [],
                 package_name: parsed.package_name || '',
                 name: parsed.name || '',
@@ -55,8 +101,8 @@ export class AnvilYamlParser {
                     description: parsed.metadata?.description,
                     logo: parsed.metadata?.logo,
                 },
-                startup_form: parsed.startup_form,
-                startup: parsed.startup,
+                startup_form: parsed.startup_form || (typeof parsed.startup === 'object' && parsed.startup?.module) || parsed.startup,
+                startup: typeof parsed.startup === 'object' ? parsed.startup.module : parsed.startup,
                 native_deps: parsed.native_deps || [],
                 db_schema: parsed.db_schema,
             };
@@ -72,25 +118,28 @@ export class AnvilYamlParser {
         try {
             const parsed = yaml.load(yamlContent) as any;
 
+            // Replace Material 3 Theme components with standard Anvil components
+            const processedParsed = replaceMaterial3Components(parsed);
+
             // Parse basic structure
             const formTemplate: AnvilFormTemplate = {
-                components: this.parseComponents(parsed.components || []),
+                components: this.parseComponents(processedParsed.components || []),
                 container: {
-                    type: parsed.container?.type || 'ColumnPanel',
-                    properties: parsed.container?.properties || {},
+                    type: processedParsed.container?.type || 'ColumnPanel',
+                    properties: processedParsed.container?.properties || {},
                 },
-                event_bindings: this.parseEventBindings(parsed.event_bindings || {}),
-                data_bindings: this.parseDataBindings(parsed.data_bindings || []),
-                is_package: parsed.is_package || false,
+                event_bindings: this.parseEventBindings(processedParsed.event_bindings || {}),
+                data_bindings: this.parseDataBindings(processedParsed.data_bindings || []),
+                is_package: processedParsed.is_package || false,
             };
 
             // Handle optional fields
-            if (parsed.custom_component_events) {
-                formTemplate.custom_component_events = parsed.custom_component_events;
+            if (processedParsed.custom_component_events) {
+                formTemplate.custom_component_events = processedParsed.custom_component_events;
             }
 
-            if (parsed.layout_metadata) {
-                formTemplate.layout_metadata = parsed.layout_metadata;
+            if (processedParsed.layout_metadata) {
+                formTemplate.layout_metadata = processedParsed.layout_metadata;
             }
 
             // Validate the parsed structure
@@ -312,8 +361,9 @@ export class AnvilYamlParser {
         const warnings: string[] = [];
         const knownComponentTypes = new Set([
             'ColumnPanel', 'LinearPanel', 'FlowPanel', 'GridPanel', 'XYPanel', 'HtmlTemplate',
-            'Label', 'TextBox', 'Button', 'CheckBox', 'RadioButton', 'DropDown', 'DatePicker',
-            'DataGrid', 'RepeatingPanel', 'DataRowPanel', 'Plot', 'Image', 'FileLoader', 'Timer'
+            'Label', 'TextBox', 'TextArea', 'Button', 'CheckBox', 'RadioButton', 'DropDown', 'DatePicker',
+            'DataGrid', 'RepeatingPanel', 'DataRowPanel', 'Plot', 'Image', 'FileLoader', 'Timer',
+            'NumberBox', 'RichText', 'Link', 'Notification'
         ]);
 
         for (const component of components) {

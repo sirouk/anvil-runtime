@@ -150,7 +150,12 @@ export class AppDiscoveryService {
 
         // Check for startup property (alternative format)
         if (config.startup) {
-            return config.startup;
+            // Handle both string and object formats
+            if (typeof config.startup === 'string') {
+                return config.startup;
+            } else if (typeof config.startup === 'object' && config.startup.module) {
+                return config.startup.module;
+            }
         }
 
         // Look for common main form names

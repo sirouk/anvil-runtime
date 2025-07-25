@@ -1,0 +1,35 @@
+# Built-in Dependency Mappings for anvil-app-server
+# This file provides fallback mappings for popular Anvil dependencies
+# When a dependency is missing, these mappings allow apps to continue working
+
+# Material 3 Theme dependency mappings
+dep_lin1x4oec0ytd:
+  name: "Material 3 Theme"
+  description: "Material Design 3 component theme"
+  fallback_mapping:
+    # Text Input Components
+    "_Components.TextInput.TextArea": "TextArea"
+    "_Components.TextInput.TextBox": "TextBox"
+    
+    # Button Components  
+    "_Components.Button": "Button"
+    
+    # Form Controls
+    "_Components.RadioButton": "RadioButton"
+    "_Components.RadioGroupPanel": "ColumnPanel"
+    "_Components.CheckBox": "CheckBox"
+    "_Components.DropDown": "DropDown"
+    
+    # Layout Components
+    "_Components.Card": "ColumnPanel"
+    "_Components.Container": "ColumnPanel"
+    
+    # Data Components
+    "_Components.DataGrid": "DataGrid"
+    "_Components.RepeatingPanel": "RepeatingPanel"
+
+# Other popular dependencies can be added here
+# dep_other_popular_theme:
+#   name: "Another Popular Theme"
+#   fallback_mapping:
+#     "_SomeComponent": "StandardEquivalent" 

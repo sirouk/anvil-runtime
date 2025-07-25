@@ -48,6 +48,10 @@ next-env.d.ts
 
 # logs
 /logs/
+
+# Generated Anvil CSS files
+/public/anvil-css/
+/public/fonts/
 *.log
 
 # dist

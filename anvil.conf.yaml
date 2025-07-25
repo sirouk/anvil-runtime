@@ -1,0 +1,11 @@
+# Configuration for anvil-app-server to use local PostgreSQL
+# This prevents the embedded PostgreSQL from starting
+
+# Use local PostgreSQL database
+database: "jdbc:postgresql://localhost:5432/korbosbintemplate?user=chrisk"
+
+# Auto-migrate database schema
+auto-migrate: true
+
+# Application path (current directory)
+app: . 
