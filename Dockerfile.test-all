@@ -1,0 +1,48 @@
+# Dockerfile.test-all - Comprehensive Test Environment for Anvil-NextJS Bridge
+FROM node:18-bullseye
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    postgresql-client \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python packages globally (avoid venv symlink issues with Turbopack)
+COPY requirements-test.txt ./
+RUN pip3 install --no-cache-dir -r requirements-test.txt
+
+# Install Playwright browsers
+RUN npx playwright install --with-deps chromium
+
+# Copy package files and install Node.js dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy test configuration files
+COPY playwright*.config.ts ./
+COPY tsconfig.json ./
+
+# Copy source code and tests
+COPY src/ src/
+COPY tests/ tests/
+COPY tools/ tools/
+COPY public/ public/
+COPY .env* ./
+
+# Create test result directories
+RUN mkdir -p test-results/videos test-results/screenshots test-results/traces test-results/unit test-results/integration
+
+# Set environment variables for testing
+ENV NODE_ENV=test
+ENV CI=true
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+ENV PLAYWRIGHT_DISABLE_WEB_SERVER=1
+ENV DOCKER_ENV=true
+
+# Default command runs all tests
+CMD ["npm", "run", "test:all:docker"] 

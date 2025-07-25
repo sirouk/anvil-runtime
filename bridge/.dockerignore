@@ -1,0 +1,116 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js build output
+.next/
+out/
+
+# Test artifacts
+test-results/
+playwright-report/
+test-results-*/
+coverage/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Git
+.git/
+.gitignore
+
+# Documentation that's not needed in container
+README*.md
+docs/
+*.md
+
+# Temporary files
+tmp/
+temp/
+
+# Package manager cache
+.npm
+.yarn/cache
+.pnp
+.pnp.js
+
+# Build artifacts (will be built in container)
+dist/
+build/
+
+# Local Anvil testing directories (will be created in container)
+anvil-testing/
+
+# Python virtual environments (to avoid symlink issues)
+anvil-env/
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Playwright browsers (installed separately in container)
+.playwright/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+.tmp/
+
+# Husky
+.husky/ 
