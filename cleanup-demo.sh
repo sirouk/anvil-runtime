@@ -64,6 +64,10 @@ stop_services() {
     pkill -f "next" 2>/dev/null || true
     pkill -f "npm.*dev" 2>/dev/null || true
     
+    # Stop WebSocket bridge server
+    log_info "Stopping WebSocket bridge server..."
+    pkill -f "node.*websocket-server" 2>/dev/null || true
+    
     # Stop downlink host
     pkill -f "anvil_downlink_host" 2>/dev/null || true
     
@@ -123,7 +127,7 @@ cleanup_demo_files() {
     rm -rf anvil-testing/* 2>/dev/null || true
     
     # Remove log files
-    rm -f anvil-server.log nextjs-server.log 2>/dev/null || true
+    rm -f anvil-server.log nextjs-server.log websocket-server.log 2>/dev/null || true
     
     # Remove NextJS build files and dependencies
     if [[ -d "bridge" ]]; then
@@ -209,7 +213,7 @@ verify_cleanup() {
     local issues=0
     
     # Check for running processes
-    if pgrep -f "anvil-app-server\|java.*anvil\|next.*dev" >/dev/null 2>&1; then
+    if pgrep -f "anvil-app-server\|java.*anvil\|next.*dev\|websocket-server\|anvil_downlink_host" >/dev/null 2>&1; then
         log_warning "Some processes are still running"
         issues=$((issues + 1))
     fi

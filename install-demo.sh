@@ -626,6 +626,7 @@ start_anvil_server() {
     # Kill any existing anvil server processes
     pkill -f "anvil-app-server" 2>/dev/null || true
     pkill -f "java.*anvil" 2>/dev/null || true
+    pkill -f "anvil_downlink_host" 2>/dev/null || true
     
     # Verify database is ready before starting server
     verify_database_ready
@@ -749,8 +750,9 @@ start_nextjs_server() {
     
     cd bridge
     
-    # Kill any existing Next.js processes
+    # Kill any existing Next.js and WebSocket processes
     pkill -f "next" 2>/dev/null || true
+    pkill -f "node.*websocket-server" 2>/dev/null || true
     
     # Start Next.js in background
     log_info "Starting NextJS server on port 3000..."
@@ -884,8 +886,9 @@ main() {
     echo
     echo "🛠️ To stop the servers when done:"
     echo "  pkill -f 'java.*anvil'"
+    echo "  pkill -f 'anvil-app-server'"
     echo "  pkill -f 'next'"
-    echo "  pkill -f 'websocket-server'"
+    echo "  pkill -f 'node.*websocket-server'"
     echo
     if [[ "$APP_TYPE" == "custom" ]] || [[ "$APP_TYPE" == "existing" ]]; then
             echo "🔄 Automatic Configuration (applied seamlessly):"
