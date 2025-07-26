@@ -560,7 +560,32 @@ docker exec -it anvil-test-all-runner /bin/bash
 **✅ Quality Gates**: PR protection rules ensure all tests pass before merge  
 **✅ Developer Choice**: Flexible testing (bare metal for speed, containers for consistency)
 
-## 🎯 **Installation Requirements**
+## 🤔 Architectural Decisions & FAQ
+
+### **Q: Why was a new bridge built from scratch instead of wrapping the original Anvil client?**
+
+This is a critical question about our architectural strategy. The goal is to empower developers to use Anvil forms within a modern Next.js environment, allowing full customization while preserving backend functionality.
+
+**The Short Answer: We took the *correct* path, not the "difficult" one.**
+
+Building a new, modern bridge was a deliberate decision based on long-term value, maintainability, and developer experience. While wrapping the original legacy client might seem like a shortcut, it would have led to a fragile, unmaintainable system.
+
+Here's a comparison of the two approaches:
+
+| Feature | Our Current Bridge (Rebuild) | Alternative (Wrap Legacy Client) |
+| :--- | :--- | :--- |
+| **Integration** | ✅ **Seamless & Idiomatic**. `<AnvilForm />` is a first-class React component. | ❌ **Brittle & Clunky**. Would require `iframes` or hacks to communicate. |
+| **Styling** | ✅ **Full Customization**. Use Tailwind, CSS Modules, etc. | ❌ **Styling Nightmares**. Constant battle with legacy global CSS. |
+| **Maintainability** | ✅ **High**. Built on a modern, typed stack. | ❌ **Low**. Technical debt, hard to debug or extend. |
+| **Capabilities** | ✅ **Unlocks Next.js Features**: SSR, SEO, PWA, modern tooling. | ❌ **Limited**. Loses most benefits of the Next.js ecosystem. |
+| **Developer Experience** | ✅ **Excellent**. Work entirely in the Next.js paradigm. | ❌ **Poor**. Requires managing two separate, conflicting systems. |
+| **Testability** | ✅ **Robust**. Comprehensive, automated testing is possible. | ❌ **Very Difficult**. Legacy code is not designed for modern testing. |
+
+**Conclusion:**
+
+The from-scratch approach, while ambitious, was the only way to achieve the project's core vision. It provides a robust, future-proof foundation that properly integrates Anvil into the modern web ecosystem, rather than applying a temporary patch to a legacy system.
+
+## 🎯 Installation Requirements
 
 ### Prerequisites
 - Node.js 18+
