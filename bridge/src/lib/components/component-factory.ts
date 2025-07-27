@@ -154,8 +154,12 @@ export class ComponentFactory {
         definition: ComponentDefinition,
         context: ComponentContext
     ): Record<string, any> {
-        // Start with mapped properties
-        const reactProps = PropertyMapper.mapProps(component.properties, definition);
+        // Start with mapped properties, including component context for event handlers
+        const componentContext = {
+            name: component.name,
+            formName: context.formName
+        };
+        const reactProps = PropertyMapper.mapProps(component.properties, definition, componentContext);
 
         // Add layout styles if supported
         if (definition.layoutSupported && component.layout_properties) {

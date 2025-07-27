@@ -526,8 +526,9 @@ export const DropDown: React.FC<DropDownProps> = ({
         className
     ].filter(Boolean).join(' ');
 
-    // Normalize items to DropDownOption format
-    const normalizedItems: DropDownOption[] = items.map((item) => {
+    // Normalize items to DropDownOption format (handle null/undefined)
+    const safeItems = Array.isArray(items) ? items : [];
+    const normalizedItems: DropDownOption[] = safeItems.map((item) => {
         if (typeof item === 'string') {
             return { value: item, label: item };
         }

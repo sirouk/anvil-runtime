@@ -437,9 +437,12 @@ export const RepeatingPanel: React.FC<RepeatingPanelProps> = ({
         ...style
     };
 
+    // Ensure items is always an array (handle null/undefined explicitly)
+    const safeItems = Array.isArray(items) ? items : [];
+
     return (
         <div className={classes} style={containerStyle} {...props}>
-            {items.map((item, index) => {
+            {safeItems.map((item, index) => {
                 if (itemTemplate) {
                     return itemTemplate(item, index);
                 }

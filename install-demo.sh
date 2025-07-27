@@ -568,10 +568,8 @@ setup_anvil_app() {
     # Copy app theme assets to make them accessible
     copy_app_theme_assets "anvil-testing/$APP_NAME"
     
-    # Create anvil.conf.yaml for custom or existing apps to use local PostgreSQL
-    if [[ "$APP_TYPE" != "demo" ]]; then
-        create_anvil_config "anvil-testing/$APP_NAME"
-    fi
+    # Create anvil.conf.yaml for ALL apps (demo, custom, existing) to use local PostgreSQL
+    create_anvil_config "anvil-testing/$APP_NAME"
 }
 
 # Clean anvil-testing directory to ensure single app focus

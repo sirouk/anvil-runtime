@@ -171,7 +171,7 @@ async function setupTodoDemoEnvironment(): Promise<void> {
         // Create fresh Todo demo app using Anvil's create-app command
         // Ensure anvil-testing directory exists and create app inside it
         await fs.mkdir(testEnv.appDirectory, { recursive: true });
-        const createAppCommand = `cd ${testEnv.appDirectory} && create-anvil-app todo-list ${testEnv.demoAppName}`;
+        const createAppCommand = `cd ${testEnv.appDirectory} && source ../.venv/bin/activate && create-anvil-app todo-list ${testEnv.demoAppName}`;
 
         console.log(`Running: ${createAppCommand}`);
         const { stdout, stderr } = await execAsync(createAppCommand);
@@ -237,9 +237,13 @@ async function startAnvilServer(): Promise<void> {
 
         console.log(`Starting Anvil server: ${command} ${args.join(' ')}`);
 
+        // Set up environment with virtual environment in PATH
+        const venvPath = path.resolve(testEnv.appDirectory, '../.venv/bin');
+        const envPath = `${venvPath}:${process.env.PATH}`;
+
         testEnv.anvilProcess = spawn(command, args, {
             stdio: ['ignore', 'pipe', 'pipe'],
-            env: { ...process.env, PATH: process.env.PATH }
+            env: { ...process.env, PATH: envPath }
         });
 
         let output = '';

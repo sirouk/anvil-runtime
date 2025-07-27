@@ -201,7 +201,8 @@ export class PropertyMapper {
      */
     static mapProps(
         anvilProps: ComponentProps,
-        definition: ComponentDefinition
+        definition: ComponentDefinition,
+        componentContext?: { name?: string; formName?: string }
     ): Record<string, any> {
         const reactProps: Record<string, any> = { ...definition.defaultProps };
 
@@ -210,7 +211,17 @@ export class PropertyMapper {
             const mappingEntries = Object.entries(definition.propMapping);
             for (const [anvilProp, reactProp] of mappingEntries) {
                 if (anvilProp in anvilProps) {
-                    reactProps[reactProp] = anvilProps[anvilProp];
+                    // Handle event handlers specially
+                    if (this.isEventHandler(anvilProp)) {
+                        reactProps[reactProp] = this.createEventHandler(
+                            anvilProp,
+                            definition.component.name || 'Unknown',
+                            componentContext?.name,
+                            componentContext?.formName
+                        );
+                    } else {
+                        reactProps[reactProp] = anvilProps[anvilProp];
+                    }
                 }
             }
         } else {
@@ -219,6 +230,35 @@ export class PropertyMapper {
         }
 
         return reactProps;
+    }
+
+    /**
+     * Check if a property is an event handler
+     */
+    private static isEventHandler(propName: string): boolean {
+        const eventHandlers = ['click', 'change', 'submit', 'focus', 'blur', 'hover', 'select'];
+        return eventHandlers.includes(propName);
+    }
+
+    /**
+     * Create a server-bound event handler
+     */
+    private static createEventHandler(
+        eventType: string,
+        componentType: string,
+        componentName?: string,
+        formName?: string
+    ) {
+        return async () => {
+            try {
+                // Dynamically import the event bridge to avoid circular dependencies
+                const { createServerEventHandler } = await import('../events/anvil-event-bridge');
+                const handler = createServerEventHandler(eventType, componentType, componentName, formName);
+                return handler();
+            } catch (error) {
+                console.error(`Failed to create event handler for ${eventType}:`, error);
+            }
+        };
     }
 
     /**

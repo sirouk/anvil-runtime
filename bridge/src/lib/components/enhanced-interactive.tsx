@@ -748,18 +748,22 @@ export const DataGrid: React.FC<DataGridProps> = ({
         className
     ].filter(Boolean).join(' ');
 
+    // Ensure arrays are safe (handle null/undefined)
+    const safeColumns = Array.isArray(columns) ? columns : [];
+    const safeRows = Array.isArray(rows) ? rows : [];
+
     // Simple pagination logic
     const startIndex = paginated ? (currentPage - 1) * pageSize : 0;
-    const endIndex = paginated ? startIndex + pageSize : rows.length;
-    const visibleRows = rows.slice(startIndex, endIndex);
-    const totalPages = paginated ? Math.ceil(rows.length / pageSize) : 1;
+    const endIndex = paginated ? startIndex + pageSize : safeRows.length;
+    const visibleRows = safeRows.slice(startIndex, endIndex);
+    const totalPages = paginated ? Math.ceil(safeRows.length / pageSize) : 1;
 
     return (
         <div className={containerClasses} style={containerStyle} {...props}>
             <table style={tableStyle}>
                 <thead style={headerStyle}>
                     <tr>
-                        {columns.map((column) => (
+                        {safeColumns.map((column) => (
                             <th
                                 key={column.id}
                                 style={{
@@ -807,7 +811,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                             }}
                             onClick={() => onRowSelect?.(row, !isRowSelected(row))}
                         >
-                            {columns.map((column) => (
+                            {safeColumns.map((column) => (
                                 <td key={column.id} style={cellStyle}>
                                     {column.format ?
                                         column.format(row[column.data_key]) :

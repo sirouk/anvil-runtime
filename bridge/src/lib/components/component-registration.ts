@@ -239,7 +239,8 @@ export function registerBasicComponents(): void {
             'variant': 'variant',
             'size': 'size',
             'loading': 'loading',
-            'loading_text': 'loadingText'
+            'loading_text': 'loadingText',
+            'click': 'onClick'
         },
         layoutSupported: true,
         validation: (props) => {
